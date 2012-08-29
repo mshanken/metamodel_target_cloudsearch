@@ -5,7 +5,7 @@
 
 $dry_run = FALSE;
 
-$realpath = realpath(__DIR__ . '/../..');
+$realpath = realpath(__DIR__ . '/../../../..');
 $application = $realpath . '/application';
 $modules = $realpath . '/modules';
 $system = $realpath . '/system';

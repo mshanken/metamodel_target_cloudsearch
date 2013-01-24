@@ -50,6 +50,7 @@ $description = json_decode(file_get_contents($argv[2]), true);
 echo "Creating domain.\n";
 if(!$dry_run) {
     $result = $cloudsearch->create_domain($domain_name);
+    sleep(3);
     if(!$result->isOK()) throw new Exception("Failed.");
 }
 
@@ -119,6 +120,7 @@ foreach($passes as $pass) {
         echo "Creating index field " . $field_name . ".\n";
         if(!$dry_run) {
             $result = $cloudsearch->define_index_field($domain_name, $field_definition);
+            sleep(3);
             if(!$result->isOK()) throw new Exception("Failed.");
         }
     }

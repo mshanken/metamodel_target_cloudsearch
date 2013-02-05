@@ -46,8 +46,8 @@ Interface Target_Cloudsearchable
 
 
     /**
-     * This method returns a configured Target_Info_CloudSearch object
-     * which is suitable for use in indexing the entity into CloudSearch.
+     * This method returns a configured Target_Info_Cloudsearch object
+     * which is suitable for use in indexing the entity into Cloudsearch.
      */
     function target_cloudsearch_info();
 }

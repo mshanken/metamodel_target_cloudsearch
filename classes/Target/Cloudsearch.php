@@ -8,7 +8,7 @@
  *
  **/
 
-class Target_CloudSearch
+class Target_Cloudsearch
 implements Target_Selectable
 {
     const DELIMITER = '__x__';
@@ -25,7 +25,7 @@ implements Target_Selectable
         
         $config = Kohana::$config->load('cloudsearch')->as_array();
         $config['domain'] = $info->get_domain_name();
-        $cloudsearch = new AmazonCloudSearch($config);
+        $cloudsearch = new AmazonCloudsearch($config);
         $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
         if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
         {
@@ -48,7 +48,7 @@ implements Target_Selectable
         
         $config = Kohana::$config->load('cloudsearch')->as_array();
         $config['domain'] = $info->get_domain_name();
-        $cloudsearch = new AmazonCloudSearch($config);
+        $cloudsearch = new AmazonCloudsearch($config);
         $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
         if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
         {

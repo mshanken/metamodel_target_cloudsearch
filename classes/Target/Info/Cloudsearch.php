@@ -3,19 +3,19 @@
  * target/info/cloudsearch.php
  * 
  * @package Metamodel
- * @subpackage Target_Info_CloudSearch
+ * @subpackage Target_Info_Cloudsearch
  * @author dknapp@mshanken.com
  *
  **/
 
 /**
- * Additional information needed by CloudSearch target.
+ * Additional information needed by Cloudsearch target.
  *
  * @package Metamodel
  * @subpackage Target_Info
  * @author dchan@mshanken.com
  */
-class Target_Info_CloudSearch
+class Target_Info_Cloudsearch
 extends Target_Info
 {
     private $entity_name = NULL;

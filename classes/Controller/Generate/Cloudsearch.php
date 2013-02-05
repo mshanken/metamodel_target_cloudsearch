@@ -2,7 +2,7 @@
 
 define('GENERATED_FILE_EXT', '.basic.php');
 
-class Controller_Generate_CloudSearch extends Controller_Generate_Docs
+class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 {
     public function action_cloudsearchdomain() 
     {

@@ -239,6 +239,11 @@ implements Target_Selectable
         $throttled = ($response_info['http_code'] == 100);
     }
 
+    public function validate_entity(Entity $entity)
+    {
+        return $entity instanceof Target_Cloudsearchable;    
+    }
+
     /**
      * dchan function meant to be a drop in replacement for create_helper()
      *

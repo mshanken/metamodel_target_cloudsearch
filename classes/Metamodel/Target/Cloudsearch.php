@@ -389,7 +389,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_exact($entity, $column_name, $param) {
+    public function visit_exact($entity, $column_storage_name, $param) {
+        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
         $info = $entity->target_cloudsearch_info();
         $column_name_renamed = sprintf('%s%s%s'
             , $this->clean_field_name($entity->getName())
@@ -409,7 +410,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_search($entity, $column_name, $param) {
+    public function visit_search($entity, $column_storage_name, $param) {
+        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
         $info = $entity->target_cloudsearch_info();
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = implode("* ", explode(' ', $search_string));
@@ -426,7 +428,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_max($entity, $column_name, $param) {
+    public function visit_max($entity, $column_storage_name, $param) {
+        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
         $info = $entity->target_cloudsearch_info();
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->getName())
@@ -441,7 +444,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_min($entity, $column_name, $param) {
+    public function visit_min($entity, $column_storage_name, $param) {
+        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
         $info = $entity->target_cloudsearch_info();
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->getName())
@@ -455,7 +459,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_range($entity, $column_name, $min, $max) {
+    public function visit_range($entity, $column_storage_name, $min, $max) {
+        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
         $info = $entity->target_cloudsearch_info();
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->getName())
@@ -578,7 +583,7 @@ implements Target_Selectable
         
         $allowed = array();
         
-        foreach($entity['cloudsearch_indexer'] as $column_name => $column) 
+        foreach($entity['selector'] as $column_name => $column) 
         {
             if(!array_key_exists($column_name, $allowed)) 
             {

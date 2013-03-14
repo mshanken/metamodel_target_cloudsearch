@@ -411,13 +411,22 @@ implements Target_Selectable
      *
      */
     public function visit_search($entity, $column_storage_name, $param) {
-        $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
+        if($column_storage_name == "text")
+        {
+            $column_name = "text";
+            $use_namespace = FALSE;
+        }
+        else
+        {
+            $column_name = $entity['cloudsearch_indexer']->lookup_storage_name($column_storage_name);
+            $use_namespace = TRUE;
+        }
         $info = $entity->target_cloudsearch_info();
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = implode("* ", explode(' ', $search_string));
         return sprintf("(field %s%s%s '%s*')"
-            , $this->clean_field_name($entity->getName())
-            , self::DELIMITER
+            , $use_namespace ? $this->clean_field_name($entity->getName()) : ""
+            , $use_namespace ? self::DELIMITER : ""
             , $this->clean_field_name($column_name)
             , $search_terms
         );
@@ -596,7 +605,7 @@ implements Target_Selectable
                 $type = $type->getType();
             }
 
-            if($type instanceof Type_FreeText)
+            if($type instanceof Type_Freetext)
             {
                 $allowed[$column_name][] = Selector::SEARCH;
                 $allowed[$column_name][] = Selector::SORT;

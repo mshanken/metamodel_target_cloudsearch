@@ -11,6 +11,9 @@
 Class Metamodel_Target_Cloudsearch
 implements Target_Selectable
 {
+    const VIEW_INDEXER = "cloudsearch_indexer";
+    const VIEW_PAYLOAD = "cloudsearch_payload";
+    const VIEW_FACETS = "cloudsearch_facets";
     const DELIMITER = '__x__';
     protected static $search_endpoint = null;
     protected static $document_endpoint = null;
@@ -94,7 +97,7 @@ implements Target_Selectable
     /**
      * implements selectable
      */
-    public function select(Entity $e, Selector $selector = null)
+    public function select(Entity_Row $e, Selector $selector = null)
     {
         if (!($e instanceof Target_Cloudsearchable)) throw new Exception('Entity must implement Cloudsearchable');
         $info = $e->target_cloudsearch_info();
@@ -161,7 +164,7 @@ implements Target_Selectable
     /**
      * implements selectable
      */
-    public function select_count(Entity $e, Selector $selector = null)
+    public function select_count(Entity_Row $e, Selector $selector = null)
     {
         return $this->select_count;
     }
@@ -169,7 +172,7 @@ implements Target_Selectable
     /**
      * implements selectable
      */
-    public function create(Entity $entity) 
+    public function create(Entity_Row $entity) 
     { 
         if (!($entity instanceof Target_Cloudsearchable))
             throw new Exception('Entity must implement Cloudsearchable');
@@ -194,7 +197,7 @@ implements Target_Selectable
      * 
      * only to satisfy interface. in ter face.
      */
-    public function update(Entity $entity, Selector $selector = null)
+    public function update(Entity_Row $entity, Selector $selector = null)
     { 
         $this->create($entity);
     }
@@ -202,7 +205,7 @@ implements Target_Selectable
     /**
      * implements selectable
      */
-    public function remove(Entity $entity, Selector $selector)
+    public function remove(Entity_Row $entity, Selector $selector)
     {
         if (!($entity instanceof Target_Cloudsearchable))
             throw new Exception('Entity must implement Cloudsearchable');
@@ -239,7 +242,7 @@ implements Target_Selectable
         $throttled = ($response_info['http_code'] == 100);
     }
 
-    public function validate_entity(Entity $entity)
+    public function validate_entity(Entity_Row $entity)
     {
         return $entity instanceof Target_Cloudsearchable;    
     }
@@ -570,7 +573,7 @@ implements Target_Selectable
         return $name;
     }
 
-    public function selector_security(Entity $entity, Selector $selector)
+    public function selector_security(Entity_Root $entity, Selector $selector)
     {
         $security = $selector->security;
         // @TODO move this to child class, it is project/schema specific
@@ -578,18 +581,19 @@ implements Target_Selectable
         
         $allowed = array();
         
-        foreach($entity['cloudsearch_indexer'] as $column_name => $column) 
+        foreach($entity['cloudsearch_indexer'] as $column_name => $type) 
         {
             if(!array_key_exists($column_name, $allowed)) 
             {
                 $allowed[$column_name] = array();
             }
             
-            $type = $column->getType();
+            /*
             while ($type instanceof Entity_Array || $type instanceof Entity_Pivot)
             {
-                $type = $type->getType();
+                $type = $type->get_type();
             }
+            */
 
             if($type instanceof Type_FreeText)
             {

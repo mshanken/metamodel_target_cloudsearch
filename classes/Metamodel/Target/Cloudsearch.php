@@ -304,21 +304,21 @@ implements Target_Selectable
                     $value = $column->to_array();
                     if(empty($value)) 
                     {
-                        $value = 'c'; // array('');
+                        $value = array('');
                     } 
                 }
                 else if ($column instanceof Entity_Structure)
                 {
-                    $value = 'a'; // $column->to_array();
+                    $value = $column->to_array();
                 }
                 else 
                 {   
-                    $value = 'b'; // $column;
+                    $value = $column;
                 }
 
                 if (empty($value)) 
                 {
-                    $fields_renamed[$new_name] = 'e'; // '';
+                    $fields_renamed[$new_name] = '';
                 } 
                 else 
                 {

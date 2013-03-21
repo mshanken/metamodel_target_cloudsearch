@@ -519,54 +519,6 @@ implements Target_Selectable
         return $name;
     }
 
-    public function selector_security(Entity_Row $entity, Selector $selector)
-    {
-        $security = $selector->security;
-        // @TODO move this to child class, it is project/schema specific
-        $security->map('any', 'text')->allow('any');
-        
-        $allowed = array();
-        
-        foreach($entity[Target_Cloudsearch::VIEW_INDEXER] as $column_name => $column) 
-        {
-            if(!array_key_exists($column_name, $allowed)) 
-            {
-                $allowed[$column_name] = array();
-            }
-            
-            /*
-            while ($type instanceof Entity_Array || $type instanceof Entity_Pivot)
-            {
-                $type = $type->get_type();
-            }
-            */
-
-            if($type instanceof Type_FreeText)
-            {
-                $allowed[$column_name][] = Selector::SEARCH;
-                $allowed[$column_name][] = Selector::SORT;
-            } 
-            else if ($type instanceof Type_Number)
-            {
-                $allowed[$column_name][] = Selector::SEARCH;
-                $allowed[$column_name][] = Selector::EXACT;
-                $allowed[$column_name][] = Selector::SORT;
-            } 
-            else 
-            {
-                $allowed[$column_name][] = Selector::SEARCH;
-                $allowed[$column_name][] = Selector::EXACT;
-                $allowed[$column_name][] = Selector::SORT;
-            }
-        }
-        
-        foreach($allowed as $column_name => $permissions) 
-        {
-            $security->allow($column_name, $permissions);
-        }
-        $security->allow('text_relevance', array(Selector::SORT));
-    }
-    
     /**
      * helper of select helper
      *

@@ -81,7 +81,7 @@ implements Target_Cloudsearchable
     
 }
 
-class TargetTest extends Unittest_TestCase
+class CloudsearchTest extends Unittest_TestCase
 {
     public function testCloudsearch()
     {

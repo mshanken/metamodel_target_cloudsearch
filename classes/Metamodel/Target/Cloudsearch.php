@@ -11,9 +11,9 @@
 Class Metamodel_Target_Cloudsearch
 implements Target_Selectable
 {
-    const VIEW_PAYLOAD = 'Cloudsearch_PAYLOAD';
-    const VIEW_FACETS = 'Cloudsearch_FACETS';
-    const VIEW_INDEXER = 'Cloudsearch_INDEX';
+    const VIEW_PAYLOAD = 'cloudsearch_payload';
+    const VIEW_FACETS = 'cloudsearch_facets';
+    const VIEW_INDEXER = 'cloudsearch_indexer';
 
     const DELIMITER = '__x__';
 

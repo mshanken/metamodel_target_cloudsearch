@@ -65,5 +65,11 @@ extends Target_Info
     {
         $this->facet_constraints[$field] = $constraints;
     }
+
+    // @TODO
+    public function validate()
+    {
+        return true;
+    }
 }
 

@@ -386,10 +386,20 @@ implements Target_Selectable
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = implode("* ", explode(' ', $search_string));
-        return sprintf("(field %s%s%s '%s*')"
-            , $this->clean_field_name($entity->get_root()->get_name())
-            , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+        if($column_name == "text")
+        {
+            $field_name = "text";
+        }
+        else
+        {
+            $field_name = sprintf("%s%s%s"
+                , $this->clean_field_name($entity->get_root()->get_name())
+                , Target_Cloudsearch::DELIMITER
+                , $this->clean_field_name($column_name)
+            );
+        }
+        return sprintf("(field %s '%s*')"
+            , $field_name
             , $search_terms
         );
 

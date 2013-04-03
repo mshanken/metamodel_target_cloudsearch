@@ -23,7 +23,6 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
     // make docs helper
     public function get_entity_class_names()
     {
-        $target = new Target_Api();
         $files = $this->getImportantFiles( Kohana::list_files('classes/Entity'));
         //$entities = Kodoc::class_methods($files);
         $entities = $this->class_methods($files);
@@ -43,8 +42,8 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             $interface_names = $entity_class->getInterfaceNames();
             if(in_array('Target_Cloudsearchable', $interface_names))
             {
-                $entity = new $entity_class_name();
-                $entity_name = $entity->getName();
+                $entity = $entity_class_name::factory();
+                $entity_name = $entity->get_root()->get_name();
                 $entity_name_cleaned = $this->clean_field_name($entity_name);
                 
                 foreach($entity['cloudsearch_facets'] as $column_name => $column) 
@@ -77,19 +76,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
                 foreach(array('key', 'cloudsearch_indexer') as $view_name)
                 {
-                    foreach($entity[$view_name] as $column_name => $column) 
+                    foreach($entity[$view_name]->get_children() as $column_name => $type) 
                     {
-                        $type = $column->getType();
                         while ($type instanceof Entity_Array || $type instanceof Entity_Pivot)
                         {
-                            $type = $type->getType();
+                            $temporary = $type->get_children();
+                            $type = $temporary[0];
                         }
     
                         if($type instanceof Type_FreeText)
                         {
                             $field_definition = array('type' => 'text',
                                                       'facet_enabled' => FALSE,
-                                                      'result_enabled' => TRUE);
+                                                      'result_enabled' => FALSE);
                         } 
                         else if ($type instanceof Type_Number)
                         {
@@ -100,7 +99,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                             $field_definition = array('type' => 'literal',
                                                       'search_enabled' => TRUE,
                                                       'facet_enabled' => FALSE,
-                                                      'result_enabled' => TRUE);
+                                                      'result_enabled' => FALSE);
                         }
                         /*
                         $field_definition['debug'] = array(

@@ -329,7 +329,7 @@ implements Target_Selectable
         return array(
             'type' => 'add',
             'lang' => 'en',
-            'id' => $this->clean_field_name(implode('_', $entity[Entity_Root::VIEW_KEY]->to_array())),
+            'id' => $this->clean_field_name($entity->get_root()->get_name()) . '_' . $this->clean_field_name(implode('_', $entity[Entity_Root::VIEW_KEY]->to_array())),
             'version' => time(),
             'fields' => $fields_renamed
         );

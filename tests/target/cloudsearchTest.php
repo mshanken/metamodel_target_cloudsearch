@@ -9,68 +9,68 @@ implements Target_Cloudsearchable
         parent::__construct('example');    
         
         $this['key'] = new Entity_Columnset('key');
-        $this['key']['primary_id'] = new Entity_Column('primary_id', Type::instance('uuid'));
+        $this['key']['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
         $this['key']->set_required('primary_id');
 
         $this['timestamp'] = new Entity_Columnset('timestamp');
-        $this['timestamp']['modified_at'] = new Entity_Column('modified_at', Type::instance('date'));
+        $this['timestamp']['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
         $this['timestamp']->set_required('modified_at');
 
         $this['api'] = new Entity_Columnset('api');
-        $this['api']['name'] = new Entity_Column('name', Type::instance('string'));
+        $this['api']['name'] = new Entity_Column('name', Type::factory('string'));
         
         $this['api']['related'] = new Entity_Columnset('related');
-        $this['api']['related']['related_id'] = new Entity_Column('related_id', Type::instance('uuid'));
-        $this['api']['related']['related_name'] = new Entity_Column('related_name', Type::instance('string'));
+        $this['api']['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
+        $this['api']['related']['related_name'] = new Entity_Column('related_name', Type::factory('string'));
         $this['api']['related']->set_required('related_name');
         
         $multiple = new Entity_ColumnSet('multiple');
-        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::instance('uuid'));
-        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::instance('string'));
+        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
+        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::factory('string'));
         $this['api']['multiple'] = array($multiple);
 
         $this[Target_Cloudsearch::VIEW_INDEXER] = new Entity_Columnset(Target_Cloudsearch::VIEW_INDEXER);
-        $this[Target_Cloudsearch::VIEW_INDEXER]['primary_id'] = new Entity_Column('primary_id', Type::instance('uuid'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['name'] = new Entity_Column('name', Type::instance('freetext'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['name'] = new Entity_Column('name', Type::factory('freetext'));
         
         // tests for columnset non-facet
-        $this[Target_Cloudsearch::VIEW_INDEXER]['related_id'] = new Entity_Column('related_id', Type::instance('uuid'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['related_name'] = new Entity_Column('related_name', Type::instance('freetext'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['related_name'] = new Entity_Column('related_name', Type::factory('freetext'));
         
         // tests for array[columnset] non-facet
-        $multiple_id = new Entity_Pivot('multiple');
-        $multiple_id['multiple_id'] = new Entity_Column('multiple_id', Type::instance('uuid'));
+        $multiple_id = new Entity_Columnset_Join('multiple');
+        $multiple_id['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
         $this[Target_Cloudsearch::VIEW_INDEXER]['multiple_id'] = array($multiple_id);
 
-        $multiple_name = new Entity_Pivot('multiple');
-        $multiple_name['multiple_name'] = new Entity_Column('multiple_name', Type::instance('freetext'));
+        $multiple_name = new Entity_Columnset_Join('multiple');
+        $multiple_name['multiple_name'] = new Entity_Column('multiple_name', Type::factory('freetext'));
         $this[Target_Cloudsearch::VIEW_INDEXER]['multiple_name'] = array($multiple_name);
 
         $this[Target_Cloudsearch::VIEW_FACETS] = new Entity_Columnset('cloudsearch_facets');
         
         // test for columnset facet
         $related_facet = new Entity_ColumnSet('related_facetable');
-        $related_facet['related_id'] = new Entity_Column('related_id', Type::instance('uuid'));
-        $related_facet['related_name'] = new Entity_Column('related_name', Type::instance('freetext'));
+        $related_facet['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
+        $related_facet['related_name'] = new Entity_Column('related_name', Type::factory('freetext'));
         $this[Target_Cloudsearch::VIEW_FACETS]['related_facetable'] = $related_facet;
 
         // test for array[columnset] facet
         $multiple_facet = new Entity_ColumnSet('multiple');
-        $multiple_facet['multiple_id'] = new Entity_Column('multiple_id', Type::instance('uuid'));
-        $multiple_facet['multiple_name'] = new Entity_Column('multiple_name', Type::instance('freetext'));
+        $multiple_facet['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
+        $multiple_facet['multiple_name'] = new Entity_Column('multiple_name', Type::factory('freetext'));
         $this[Target_Cloudsearch::VIEW_FACETS]['multiple_facetable'] = array($multiple_facet);
 
         $this[Target_Cloudsearch::VIEW_PAYLOAD] = new Entity_Columnset('cloudsearch_payload');
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['name'] = new Entity_Column('name', Type::instance('string'));
+        $this[Target_Cloudsearch::VIEW_PAYLOAD]['name'] = new Entity_Column('name', Type::factory('string'));
         
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['related'] = new Entity_Columnset('related');
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['related_id'] = new Entity_Column('related_id', Type::instance('uuid'));
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['name'] = new Entity_Column('related_name', Type::instance('string'));
+        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
+        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['name'] = new Entity_Column('related_name', Type::factory('string'));
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']->set_required('name');
         
         $multiple = new Entity_ColumnSet('multiple');
-        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::instance('uuid'));
-        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::instance('string'));
+        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
+        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::factory('string'));
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['multiple'] = array($multiple);
 
         $info = new Target_Info_Cloudsearch();
@@ -108,7 +108,7 @@ class CloudsearchTest extends Unittest_TestCase
         $this->assertEquals(5, count($parsed));
         $this->assertEquals("add", $parsed['type']);
         $this->assertEquals("en", $parsed['lang']);
-        $this->assertEquals("f59dfde3_3919_4b58_c200_0cb83fd4ff54", $parsed['id']);
+        $this->assertEquals("example_f59dfde3_3919_4b58_c200_0cb83fd4ff54", $parsed['id']);
         $this->assertInternalType('integer', $parsed['version']);
         $this->assertInternalType('array', $parsed['fields']);
         

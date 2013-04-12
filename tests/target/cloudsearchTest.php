@@ -100,9 +100,7 @@ class CloudsearchTest extends Unittest_TestCase
         $entity['api']['multiple'][1]['multiple_id'] = '8663622f-cac6-4041-9cd1-d9f9288b4aa6';
         $entity['api']['multiple'][1]['multiple_name'] = 'Another Multiple Entity';
         
-        $document = $target->targetize($entity);
-
-        $json = json_encode($document);
+        $json = $target->targetize($entity);
         $parsed = Parse::json_parse($json, true);
         
         $this->assertEquals(5, count($parsed));

@@ -96,9 +96,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         } 
                         else 
                         {
+                            if (($type instanceof Type_WineColor)
+                                || ($type instanceof Type_WineType))
+                            {
+                                $facet_enabled = TRUE;
+                            }
+                            else
+                            {
+                                $facet_enabled = FALSE;
+                            }
+                            
                             $field_definition = array('type' => 'literal',
                                                       'search_enabled' => TRUE,
-                                                      'facet_enabled' => FALSE,
+                                                      'facet_enabled' => $facet_enabled,
                                                       'result_enabled' => FALSE);
                         }
                         /*

@@ -220,119 +220,63 @@ implements Target_Selectable
      */
     public function targetize(Entity_Row $entity) 
     { 
-        $info = $entity->get_root()->get_target_info($this);
-
-        $fields_renamed = array(
-            'payload' => json_encode(array(
-                Entity_Root::VIEW_KEY => $entity[Entity_Root::VIEW_KEY]->to_array(),
-                Entity_Root::VIEW_TS => $entity[Entity_Root::VIEW_TS]->to_array(),
-                Target_Cloudsearch::VIEW_PAYLOAD =>  $entity[Target_Cloudsearch::VIEW_PAYLOAD]->to_array(),
-            )),
-            'entity' => $entity->get_root()->get_name(),
-        );
-
-        if(!$entity[Target_Cloudsearch::VIEW_FACETS]->validate())
+        $entity_name = $entity->get_root()->get_name();
+        $timestamp = $entity['timestamp']->to_array();
+        if(is_array($timestamp) && array_key_exists(0, $timestamp))
         {
-            throw new Exception('Invalid column values.' . var_export($entity[$view_name]->problems(), true));
+            $timestamp = $timestamp[0];
         }
-        
-        foreach($entity[Target_Cloudsearch::VIEW_FACETS] as $column_name => $column) 
-        {            
-            $new_name = $this->clean_field_name(sprintf('%s%s%s'
-                , $entity->get_root()->get_name()
-                , Target_Cloudsearch::DELIMITER
-                , $column_name
-            ));
-
-            if ($column instanceof Entity_Array)
-            {
-                $fields_renamed[$new_name] = array();
-
-                if(!count($column)) // no rows
-                {
-                    $fields_renamed[$new_name][] = '';
-                } 
-                else if ($column[0] instanceof Entity_Columnset) // rows are columnsets ?
-                {
-                    $fields_renamed[$new_name] = array_map('json_encode', $column->to_array());
-                }
-                else  // rows are scalar
-                {
-                    $fields_renamed[$new_name] = $column->to_array();
-                }
-            }
-            else if ($column instanceof Entity_Columnset)
-            {
-                if (!$column->is_empty())
-                {
-                    $fields_renamed[$new_name] = json_encode($column->to_array());
-                }
-                else 
-                {
-                    $fields_renamed[$new_name] = '';
-                }
-            } 
-            else if (empty($column))
-            {
-                $fields_renamed[$new_name] = '';
-            }
-            else  // scalar
-            {
-                $fields_renamed[$new_name] = $column;
-            }
-        }
-
-        foreach(array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view_name)
+        else
         {
-            if(!$entity[$view_name]->validate())
+            $timestamp = time();
+        }
+        $payload = array();
+        $payload['key'] = $entity['key']->to_array();
+        $payload['timestamp'] = $entity['timestamp']->to_array();
+        $payload['cloudsearch_payload'] = $entity['cloudsearch_payload']->to_array();
+        $fields = array();
+        $fields['entity'] = $entity_name;
+        $fields['payload'] = json_encode($payload);
+        foreach(array('cloudsearch_indexer', 'cloudsearch_facets') as $view_name)
+        {
+            $children = $entity[$view_name]->get_children();
+            $array = $entity[$view_name]->to_array();
+            if(is_null($array))
             {
-                throw new Exception('Invalid column values.' . var_export($entity[$view_name]->problems(), true));
+                $array = array();
             }
-            
-            foreach($entity[$view_name] as $column_name => $column) 
+            foreach($array as $alias => $value)
             {
-                $new_name = $this->clean_field_name(sprintf('%s%s%s'
-                    , $entity->get_root()->get_name()
-                    , Target_Cloudsearch::DELIMITER
-                    , $column_name
-                ));
-
-                if ($column instanceof Entity_Array)
+                $child = $children[$alias];
+                if(($child instanceof Entity_Array_Nested)
+                   && !($child instanceof Entity_Array_Pivot))
                 {
-                    $fields_renamed[$new_name] = array();
-
-                    $value = $column->to_array();
-                    if(empty($value)) 
-                    {
-                        $value = array('');
-                    } 
+                    $value = array_map('json_encode', $value);
                 }
-                else if ($column instanceof Entity_Structure)
+                else if($child instanceof Entity_Columnset)
                 {
-                    $value = $column->to_array();
+                    $value = json_encode($value);
                 }
-                else 
-                {   
-                    $value = $column;
-                }
-
-                if (empty($value)) 
-                {
-                    $fields_renamed[$new_name] = '';
-                } 
-                else 
-                {
-                    $fields_renamed[$new_name] = $value;
-                }
+                $fields[$entity_name . '__x__' . $this->clean_field_name($alias)] = $value;
             }
         }
-        return array(
-            'type' => 'add',
-            'lang' => 'en',
-            'id' => $this->clean_field_name(implode('_', $entity[Entity_Root::VIEW_KEY]->to_array())),
-            'version' => time(),
-            'fields' => $fields_renamed
-        );
+        foreach($fields as $name => $value) {
+            if(is_null($value)) $fields[$name] = '';
+            else if(is_array($value) && !count($value)) $fields[$name] = array('');
+        }
+        $id_values = array();
+        foreach($entity['key']->to_array() as $alias => $value)
+        {
+            $id_values[] = $value;
+        }
+        $id = $this->clean_field_name($entity_name) . '_' . $this->clean_field_name(implode('_', $id_values));
+        $document_add = array();
+        $document_add['type'] = 'add';
+        $document_add['lang'] = 'en';
+        $document_add['id'] = $id;
+        $document_add['version'] = $timestamp;
+        $document_add['fields'] = $fields;
+        return json_encode($document_add);
     }
     
 

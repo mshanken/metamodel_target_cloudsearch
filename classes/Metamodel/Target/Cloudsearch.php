@@ -240,7 +240,12 @@ implements Target_Selectable
         foreach(array('cloudsearch_indexer', 'cloudsearch_facets') as $view_name)
         {
             $children = $entity[$view_name]->get_children();
-            foreach($entity[$view_name]->to_array() as $alias => $value)
+            $array = $entity[$view_name]->to_array();
+            if(is_null($array))
+            {
+                $array = array();
+            }
+            foreach($array as $alias => $value)
             {
                 $child = $children[$alias];
                 if(($child instanceof Entity_Array_Nested)

@@ -45,17 +45,15 @@ implements Target_Selectable
         $query_parameters = array();
 
         $base_query = $selector->build_target_query($entity, $this);
+        $field_query = sprintf("(field entity '%s')",
+            strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\")));
         if(is_null($base_query)) {
-            $base_query = sprintf("(not (field %s%s%s 'A'))"
-                , $this->clean_field_name($entity->get_root()->get_name())
-                , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($info->get_id_field())
-            );
-        }       
-        $query_parameters['bq'] = sprintf("(and (field entity '%s') %s)"
-            , strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\"))
-            , $base_query
-        );
+            $query_parameters['bq'] = $field_query;
+        }
+        else
+        {
+            $query_parameters['bq'] = sprintf("(and %s %s)", $field_query, $base_query);
+        }
         $query_parameters['return-fields'] = 'payload';
 
         if ($rank = $selector->build_target_sort($entity, $this)) $query_parameters['rank'] = $rank;

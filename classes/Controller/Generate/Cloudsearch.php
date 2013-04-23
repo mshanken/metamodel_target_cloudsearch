@@ -23,7 +23,6 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
     // make docs helper
     public function get_entity_class_names()
     {
-        $target = new Target_Api();
         $files = $this->getImportantFiles( Kohana::list_files('classes/Entity'));
         //$entities = Kodoc::class_methods($files);
         $entities = $this->class_methods($files);

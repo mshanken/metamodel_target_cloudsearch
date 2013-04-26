@@ -103,7 +103,10 @@ implements Target_Selectable
         $response_body = curl_exec($session);
         $response = Parse::json_parse($response_body, true);
         $response_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
-        if($response_code != 200) 
+        if($response_code == 100)
+        {
+            throw new HTTP_Exception_100('Throttled.');
+        } else if($response_code != 200) 
         {
             echo $url;
             echo $response_body;

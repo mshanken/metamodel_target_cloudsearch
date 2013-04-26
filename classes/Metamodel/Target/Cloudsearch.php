@@ -437,7 +437,8 @@ implements Target_Selectable
      */
     public function visit_sort($entity, array $items) {
         $result = "";
-        foreach($items as $i => $item)
+        $i = 0;
+        foreach($items as $item)
         {
             if($i > 0) $result .= ",";
             
@@ -456,6 +457,8 @@ implements Target_Selectable
             $column_name = preg_replace('/-/', '_', $column_name);
             $column_name = preg_replace('/[^a-z0-9_]/', '', $column_name);
             $result .= $column_name;
+            
+            $i++;
         }
         
         return $result;

@@ -45,17 +45,15 @@ implements Target_Selectable
         $query_parameters = array();
 
         $base_query = $selector->build_target_query($entity, $this);
+        $field_query = sprintf("(field entity '%s')",
+            strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\")));
         if(is_null($base_query)) {
-            $base_query = sprintf("(not (field %s%s%s 'A'))"
-                , $this->clean_field_name($entity->get_root()->get_name())
-                , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($info->get_id_field())
-            );
-        }       
-        $query_parameters['bq'] = sprintf("(and (field entity '%s') %s)"
-            , strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\"))
-            , $base_query
-        );
+            $query_parameters['bq'] = $field_query;
+        }
+        else
+        {
+            $query_parameters['bq'] = sprintf("(and %s %s)", $field_query, $base_query);
+        }
         $query_parameters['return-fields'] = 'payload';
 
         if ($rank = $selector->build_target_sort($entity, $this)) $query_parameters['rank'] = $rank;
@@ -105,7 +103,10 @@ implements Target_Selectable
         $response_body = curl_exec($session);
         $response = Parse::json_parse($response_body, true);
         $response_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
-        if($response_code != 200) 
+        if($response_code == 100)
+        {
+            throw new HTTP_Exception_100('Throttled.');
+        } else if($response_code != 200) 
         {
             echo $url;
             echo $response_body;
@@ -436,7 +437,8 @@ implements Target_Selectable
      */
     public function visit_sort($entity, array $items) {
         $result = "";
-        foreach($items as $i => $item)
+        $i = 0;
+        foreach($items as $item)
         {
             if($i > 0) $result .= ",";
             
@@ -455,6 +457,8 @@ implements Target_Selectable
             $column_name = preg_replace('/-/', '_', $column_name);
             $column_name = preg_replace('/[^a-z0-9_]/', '', $column_name);
             $result .= $column_name;
+            
+            $i++;
         }
         
         return $result;

@@ -35,6 +35,8 @@ implements Target_Selectable
     protected $facets = null;
     protected $select_count = null;
     
+    protected static $elapsed = null;
+    
     /**
      * implements selectable
      */
@@ -113,6 +115,8 @@ implements Target_Selectable
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
         curl_close($session);
+       
+        Metamodel_Target_Cloudsearch::$elapsed = $response['info']['time-ms'] / 1000.0;
        
         $results = array();
         foreach($response['hits']['hit'] as $hit) 
@@ -561,6 +565,11 @@ implements Target_Selectable
             && $row[Target_Cloudsearch::VIEW_INDEXER]->validate()
             && $row[Entity_Root::VIEW_KEY]->validate()
             && $row[Entity_Root::VIEW_TS]->validate();
+    }
+    
+    public function debug_info()
+    {
+        return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
 }

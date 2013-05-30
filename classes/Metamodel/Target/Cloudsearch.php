@@ -490,12 +490,7 @@ implements Target_Selectable
     {
         if (is_null($this->search_endpoint))
         {
-            $domain = $this->get_cloudsearch_domain($info);
-            $endpoint = $domain->SearchService->Endpoint->to_string();
-
-            //@TODO put hardcoded stuff into config files
-            // date is AWS version number, probably wont change
-            $this->search_endpoint = sprintf('http://%s/2011-02-01/search?', $endpoint) ;
+            $this->get_cloudsearch_domain($info);
         }
         return $this->search_endpoint;
     }
@@ -509,8 +504,7 @@ implements Target_Selectable
     {
         if (is_null($this->search_endpoint))
         {
-            $domain = $this->get_cloudsearch_domain($info);
-            $this->document_endpoint = $domain->DocService->Endpoint->to_string();
+            $this->get_cloudsearch_domain($info);
         }
         return $this->document_endpoint;
     }
@@ -523,7 +517,14 @@ implements Target_Selectable
      */
     private function get_cloudsearch_domain(Target_Info_Cloudsearch $info) 
     {
-        if(is_null($this->cloudsearch_domain))
+        if(file_exists(APPPATH . 'config/cloudsearch_cache.php'))
+        {
+            $cache = include APPPATH . 'config/cloudsearch_cache.php';
+            
+            $this->search_endpoint = $cache['search_endpoint'];
+            $this->document_endpoint = $cache['document_endpoint'];
+        }
+        else if(is_null($this->cloudsearch_domain))
         {
             $config = Kohana::$config->load('cloudsearch')->as_array();
             $config['domain'] = $info->get_domain_name();
@@ -547,8 +548,20 @@ implements Target_Selectable
             }
             $this->cloudsearch_domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
            
+            $search_endpoint = $domain->SearchService->Endpoint->to_string();
+            //@TODO put hardcoded stuff into config files
+            // date is AWS version number, probably wont change
+            $this->search_endpoint = sprintf('http://%s/2011-02-01/search?', $search_endpoint) ;
+            
+            $document_endpoint = $domain->DocService->Endpoint->to_string();
+            $this->document_endpoint = $document_endpoint;
+            
+            $cache = array(
+                'search_endpoint' => $this->search_endpoint,
+                'document_endpoint' => $this->document_endpoint,
+            );
+            file_put_contents(APPPATH . 'config/cloudsearch_cache.php', "<?php\n\nreturn " . var_export($cache, TRUE) . ";");
         } 
-        return $this->cloudsearch_domain;        
     }
     
 

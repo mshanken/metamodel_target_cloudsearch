@@ -110,6 +110,8 @@ implements Target_Selectable
             throw new HTTP_Exception_100('Throttled.');
         } else if($response_code != 200) 
         {
+            echo $url;
+            echo $response_body;
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
         curl_close($session);
@@ -314,7 +316,7 @@ implements Target_Selectable
         $column_name_renamed = sprintf('%s%s%s'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+            , $this->clean_field_name($column_name)
         );
         if($info->is_numeric($column_name)) {
             return sprintf("(field %s %s)", $column_name_renamed, $param);
@@ -332,7 +334,7 @@ implements Target_Selectable
     public function visit_search($entity, $column_name, $param) {
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
-        $search_terms = implode("* ", explode(' ', $search_string));
+        $search_terms = explode(' ', $search_string);
         if($column_name == "text")
         {
             $field_name = "text";
@@ -342,13 +344,24 @@ implements Target_Selectable
             $field_name = sprintf("%s%s%s"
                 , $this->clean_field_name($entity->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+                , $this->clean_field_name($column_name)
             );
         }
-        return sprintf("(field %s '%s*')"
-            , $field_name
-            , $search_terms
-        );
+        
+        // Build search query with wildcard and exact for each word in string
+        for($i=0;$i<count($search_terms);$i++)
+        {
+            $search_terms[$i] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
+                $field_name,
+                $search_terms[$i],
+                $field_name,
+                $search_terms[$i]
+            );
+        }
+        
+        $cloudsearch_string = implode(' ', $search_terms);
+        
+        return $cloudsearch_string;
 
     }
     
@@ -361,7 +374,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+            , $this->clean_field_name($column_name)
             , $param
         );
 
@@ -376,7 +389,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+            , $this->clean_field_name($column_name)
             , $param
         );
     }
@@ -390,7 +403,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+            , $this->clean_field_name($column_name)
             , $min
             , $max
         );
@@ -530,7 +543,7 @@ implements Target_Selectable
             $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
             if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
             {
-                //echo json_encode($response->body) . "\n";
+                echo json_encode($response->body) . "\n";
                 throw new Exception("No domain named " . $config['domain']);
             }
             $domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
@@ -541,7 +554,7 @@ implements Target_Selectable
             $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
             if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
             {
-                //echo json_encode($response->body) . "\n";
+                echo json_encode($response->body) . "\n";
                 throw new Exception("No domain named " . $config['domain']);
             }
             $this->cloudsearch_domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
@@ -581,19 +594,6 @@ implements Target_Selectable
     public function debug_info()
     {
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
-    }
-
-    public function lookup_entanglement_name($entity, $entanglement_name)
-    {
-        foreach(array(Target_Cloudsearch::VIEW_INDEXER, Target_Cloudsearch::VIEW_FACETS) as $view)
-        {
-            $result = $entity[$view]->lookup_entanglement_name($entanglement_name);
-            if(!is_null($result))
-            {
-                return $result;
-            }
-        }
-        return NULL;
     }
 
 }

@@ -585,7 +585,7 @@ implements Target_Selectable
 
     public function lookup_entanglement_name($entity, $entanglement_name)
     {
-        foreach(array(Target_Cloudsearch::VIEW_FACETS, Target_Cloudsearch::VIEW_INDEXER) as $view)
+        foreach(array(Target_Cloudsearch::VIEW_INDEXER, Target_Cloudsearch::VIEW_FACETS) as $view)
         {
             $result = $entity[$view]->lookup_entanglement_name($entanglement_name);
             if(!is_null($result))

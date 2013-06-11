@@ -19,7 +19,6 @@ Class Metamodel_Target_Info_Cloudsearch
 extends Target_Info
 {
     private $entity_name = NULL;
-    private $id_field = NULL;
     private $field_types = array();
     private $facet_constraints = array();
     
@@ -35,15 +34,6 @@ extends Target_Info
     public function is_numeric($field_name) {
         return array_key_exists($field_name, $this->field_types)
                && ($this->field_types[$field_name] == 'numeric');
-    }
-    
-    // key view ?  id_for_backbone ? 
-    public function set_id_field($field_name) {
-        $this->id_field = $field_name;
-    }
-    
-    public function get_id_field() {
-        return $this->id_field;
     }
     
     public function set_domain_name($domain_name) {
@@ -67,8 +57,12 @@ extends Target_Info
     }
 
     // @TODO
-    public function validate()
+    public function validate(Entity_Root $root)
     {
+        if(!($root[Target_Cloudsearch::VIEW_PAYLOAD] instanceof Entity_Columnset)) return false;
+        if(!($root[Target_Cloudsearch::VIEW_FACETS] instanceof Entity_Columnset)) return false;
+        if(!($root[Target_Cloudsearch::VIEW_INDEXER] instanceof Entity_Columnset)) return false;
+        
         return true;
     }
 }

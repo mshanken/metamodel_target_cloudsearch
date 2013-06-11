@@ -110,7 +110,8 @@ implements Target_Selectable
             throw new HTTP_Exception_100('Throttled.');
         } else if($response_code != 200) 
         {
-            throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
+            throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']
+              . ' ... the URL we hit was: ' . $url);
         }
         curl_close($session);
        

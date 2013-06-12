@@ -413,6 +413,19 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
+    public function visit_isnull($entity, $column_name) {
+        $info = $entity->get_root()->get_target_info($this);
+        return sprintf("(not (field %s%s%s '*'))"
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($column_name)
+        );
+    }
+    
+    /**
+     * satisfy selector visitor interface
+     *
+     */
     public function visit_operator_and($entity, array $parts) {
         if(count($parts) > 0)
             return sprintf('(and %s)', implode(' ', $parts));

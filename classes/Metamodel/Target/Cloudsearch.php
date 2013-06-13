@@ -541,12 +541,16 @@ implements Target_Selectable
      */
     private function get_cloudsearch_domain(Target_Info_Cloudsearch $info) 
     {
-        if(file_exists(APPPATH . 'config/cloudsearch_cache.php'))
+        $memcache = new Memcache;
+        $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
+        
+        $search_endpoint = $memcache->get('cloudsearch_search_endpoint');
+        $document_endpoint = $memcache->get('cloudsearch_document_endpoint');
+        
+        if($search_endpoint && $document_endpoint)
         {
-            $cache = include APPPATH . 'config/cloudsearch_cache.php';
-            
-            $this->search_endpoint = $cache['search_endpoint'];
-            $this->document_endpoint = $cache['document_endpoint'];
+            $this->search_endpoint = $search_endpoint;
+            $this->document_endpoint = $document_endpoint;
         }
         else if(is_null($this->cloudsearch_domain))
         {
@@ -580,11 +584,11 @@ implements Target_Selectable
             $document_endpoint = $domain->DocService->Endpoint->to_string();
             $this->document_endpoint = $document_endpoint;
             
-            $cache = array(
-                'search_endpoint' => $this->search_endpoint,
-                'document_endpoint' => $this->document_endpoint,
-            );
-            file_put_contents(APPPATH . 'config/cloudsearch_cache.php', "<?php\n\nreturn " . var_export($cache, TRUE) . ";");
+            $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+            
+            $memcache->set('cloudsearch_search_endpoint', $this->search_endpoint, false, $cache_ttl);
+            $memcache->set('cloudsearch_document_endpoint', $this->document_endpoint, false, $cache_ttl);
+            
         } 
     }
     

@@ -316,7 +316,7 @@ implements Target_Selectable
         $column_name_renamed = sprintf('%s%s%s'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
         );
         if($info->is_numeric($column_name)) {
             return sprintf("(field %s %s)", $column_name_renamed, $param);
@@ -344,7 +344,7 @@ implements Target_Selectable
             $field_name = sprintf("%s%s%s"
                 , $this->clean_field_name($entity->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($column_name)
+                , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             );
         }
         
@@ -374,7 +374,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $param
         );
 
@@ -389,7 +389,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $param
         );
     }
@@ -403,7 +403,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $min
             , $max
         );
@@ -613,4 +613,17 @@ implements Target_Selectable
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
+    public function lookup_entanglement_name($entity, $entanglement_name)
+    {
+        foreach(array(Target_Cloudsearch::VIEW_INDEXER, Target_Cloudsearch::VIEW_FACETS) as $view)
+        {
+            $result = $entity[$view]->lookup_entanglement_name($entanglement_name);
+            if(!is_null($result))
+            {
+                return $result;
+            }
+        }
+        return NULL;
+    }
+ 
 }

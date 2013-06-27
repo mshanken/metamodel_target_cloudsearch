@@ -544,8 +544,10 @@ implements Target_Selectable
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         
-        $search_endpoint = $memcache->get('cloudsearch_search_endpoint');
-        $document_endpoint = $memcache->get('cloudsearch_document_endpoint');
+        $csdomain = Kohana::$config->load('cloudsearch.domain');
+        
+        $search_endpoint = $memcache->get('cloudsearch_search_endpoint'.$csdomain);
+        $document_endpoint = $memcache->get('cloudsearch_document_endpoint'.$csdomain);
         
         if($search_endpoint && $document_endpoint)
         {
@@ -586,8 +588,8 @@ implements Target_Selectable
             
             $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
             
-            $memcache->set('cloudsearch_search_endpoint', $this->search_endpoint, false, $cache_ttl);
-            $memcache->set('cloudsearch_document_endpoint', $this->document_endpoint, false, $cache_ttl);
+            $memcache->set('cloudsearch_search_endpoint'.$csdomain, $this->search_endpoint, false, $cache_ttl);
+            $memcache->set('cloudsearch_document_endpoint'.$csdomain, $this->document_endpoint, false, $cache_ttl);
             
         } 
     }

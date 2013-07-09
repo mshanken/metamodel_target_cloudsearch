@@ -110,8 +110,8 @@ implements Target_Selectable
             throw new HTTP_Exception_100('Throttled.');
         } else if($response_code != 200) 
         {
-            echo $url;
-            echo $response_body;
+            throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']
+              . ' ... the URL we hit was: ' . $url);
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
         curl_close($session);
@@ -316,7 +316,7 @@ implements Target_Selectable
         $column_name_renamed = sprintf('%s%s%s'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
         );
         if($info->is_numeric($column_name)) {
             return sprintf("(field %s %s)", $column_name_renamed, $param);
@@ -334,7 +334,7 @@ implements Target_Selectable
     public function visit_search($entity, $column_name, $param) {
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
-        $search_terms = implode("* ", explode(' ', $search_string));
+        $search_terms = explode(' ', $search_string);
         if($column_name == "text")
         {
             $field_name = "text";
@@ -344,13 +344,24 @@ implements Target_Selectable
             $field_name = sprintf("%s%s%s"
                 , $this->clean_field_name($entity->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($column_name)
+                , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             );
         }
-        return sprintf("(field %s '%s*')"
-            , $field_name
-            , $search_terms
-        );
+        
+        // Build search query with wildcard and exact for each word in string
+        for($i=0;$i<count($search_terms);$i++)
+        {
+            $search_terms[$i] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
+                $field_name,
+                $search_terms[$i],
+                $field_name,
+                $search_terms[$i]
+            );
+        }
+        
+        $cloudsearch_string = implode(' ', $search_terms);
+        
+        return $cloudsearch_string;
 
     }
     
@@ -363,7 +374,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $param
         );
 
@@ -378,7 +389,7 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $param
         );
     }
@@ -392,9 +403,22 @@ implements Target_Selectable
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
-            , $this->clean_field_name($column_name)
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
             , $min
             , $max
+        );
+    }
+    
+    /**
+     * satisfy selector visitor interface
+     *
+     */
+    public function visit_isnull($entity, $column_name) {
+        $info = $entity->get_root()->get_target_info($this);
+        return sprintf("(not (field %s%s%s '*'))"
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($column_name)
         );
     }
     
@@ -517,12 +541,18 @@ implements Target_Selectable
      */
     private function get_cloudsearch_domain(Target_Info_Cloudsearch $info) 
     {
-        if(file_exists(APPPATH . 'config/cloudsearch_cache.php'))
+        $memcache = new Memcache;
+        $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
+        
+        $csdomain = Kohana::$config->load('cloudsearch.domain');
+        
+        $search_endpoint = $memcache->get('cloudsearch_search_endpoint'.$csdomain);
+        $document_endpoint = $memcache->get('cloudsearch_document_endpoint'.$csdomain);
+        
+        if($search_endpoint && $document_endpoint)
         {
-            $cache = include APPPATH . 'config/cloudsearch_cache.php';
-            
-            $this->search_endpoint = $cache['search_endpoint'];
-            $this->document_endpoint = $cache['document_endpoint'];
+            $this->search_endpoint = $search_endpoint;
+            $this->document_endpoint = $document_endpoint;
         }
         else if(is_null($this->cloudsearch_domain))
         {
@@ -556,11 +586,11 @@ implements Target_Selectable
             $document_endpoint = $domain->DocService->Endpoint->to_string();
             $this->document_endpoint = $document_endpoint;
             
-            $cache = array(
-                'search_endpoint' => $this->search_endpoint,
-                'document_endpoint' => $this->document_endpoint,
-            );
-            file_put_contents(APPPATH . 'config/cloudsearch_cache.php', "<?php\n\nreturn " . var_export($cache, TRUE) . ";");
+            $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+            
+            $memcache->set('cloudsearch_search_endpoint'.$csdomain, $this->search_endpoint, false, $cache_ttl);
+            $memcache->set('cloudsearch_document_endpoint'.$csdomain, $this->document_endpoint, false, $cache_ttl);
+            
         } 
     }
     
@@ -585,4 +615,17 @@ implements Target_Selectable
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
+    public function lookup_entanglement_name($entity, $entanglement_name)
+    {
+        foreach(array(Target_Cloudsearch::VIEW_INDEXER, Target_Cloudsearch::VIEW_FACETS) as $view)
+        {
+            $result = $entity[$view]->lookup_entanglement_name($entanglement_name);
+            if(!is_null($result))
+            {
+                return $result;
+            }
+        }
+        return NULL;
+    }
+ 
 }

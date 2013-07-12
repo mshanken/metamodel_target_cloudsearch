@@ -36,14 +36,6 @@ extends Target_Info
                && ($this->field_types[$field_name] == 'numeric');
     }
     
-    public function set_domain_name($domain_name) {
-        $this->domain_name = $domain_name;
-    }
-    
-    public function get_domain_name() {
-        return $this->domain_name;
-    }
-
 
     // handle bracket facets
     public function get_facet_constraints()

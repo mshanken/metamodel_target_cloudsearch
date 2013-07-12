@@ -17,8 +17,6 @@ implements Target_Selectable
 
     const DELIMITER = '__x__';
 
-    protected $cloudsearch_domain = null;
-
     /**
      * URL of AWS cloudsearch API
      *
@@ -92,7 +90,7 @@ implements Target_Selectable
         $query_string = http_build_query($query_parameters);
 
         // calls curl to aws
-        $url = $this->get_search_endpoint($info);
+        $url = $this->get_search_endpoint();
 
         $url .= $query_string;
         $url = strtr($url, array(' ' => '%20'));
@@ -155,9 +153,9 @@ implements Target_Selectable
      */
     public function create(Entity_Row $entity) 
     { 
-        $info = $entity->get_root()->get_target_info($this);
-        $cloudsearch_endpoint = $this->get_document_endpoint($info);
+        $cloudsearch_endpoint = $this->get_document_endpoint();
         
+        /* IAK
         $clob = '[' . $this->targetize($entity) . ']';
         $curl = curl_init($cloudsearch_endpoint);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
@@ -169,6 +167,7 @@ implements Target_Selectable
 
         $succeeded = ($response_info['http_code'] == 200);
         $throttled = ($response_info['http_code'] == 100);
+        */
 
         // @TODO no return ?  what does throttled do ?
     }
@@ -188,8 +187,6 @@ implements Target_Selectable
      */
     public function remove(Entity_Row $entity, Selector $selector)
     {
-        $info = $entity->get_root()->get_target_info($this);
-
         $entities_to_remove = $this->select($entity, $selector);
         
         $clob = array();
@@ -203,8 +200,9 @@ implements Target_Selectable
         }
         $concatenated = sprintf('[%s]', implode('.', $clob));
         
-        $cloudsearch_endpoint = $this->get_document_endpoint($info);
+        $cloudsearch_endpoint = $this->get_document_endpoint();
         
+        /* IAK
         $curl = curl_init($cloudsearch_endpoint);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -214,6 +212,7 @@ implements Target_Selectable
         $response_info = curl_getinfo($curl);
         $succeeded = ($response_info['http_code'] == 200);
         $throttled = ($response_info['http_code'] == 100);
+        */
 
         //@TODO returns ? throttled ?
     }
@@ -503,11 +502,11 @@ implements Target_Selectable
      *
      * this helper caches the result of querying cloudsearch (which is expensive)
      */ 
-    private function get_search_endpoint(Target_Info_Cloudsearch $info) 
+    public function get_search_endpoint() 
     {
         if (is_null($this->search_endpoint))
         {
-            $this->get_cloudsearch_domain($info);
+            $this->get_cloudsearch_domain();
         }
         return $this->search_endpoint;
     }
@@ -517,11 +516,11 @@ implements Target_Selectable
      *
      * caches expensive cloudsearch document url lookup
      */
-    private function get_document_endpoint(Target_Info_Cloudsearch $info) 
+    public function get_document_endpoint() 
     {
-        if (is_null($this->search_endpoint))
+        if (is_null($this->document_endpoint))
         {
-            $this->get_cloudsearch_domain($info);
+            $this->get_cloudsearch_domain();
         }
         return $this->document_endpoint;
     }
@@ -532,12 +531,12 @@ implements Target_Selectable
      * @see get_document_endpoint, 
      * @see get_search_endpoint
      */
-    private function get_cloudsearch_domain(Target_Info_Cloudsearch $info) 
+    private function get_cloudsearch_domain() 
     {
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         
-        $csdomain = Kohana::$config->load('cloudsearch.domain');
+        $csdomain = Kohana::$config->load('cloudsearch.domain_name');
         
         $search_endpoint = $memcache->get('cloudsearch_search_endpoint'.$csdomain);
         $document_endpoint = $memcache->get('cloudsearch_document_endpoint'.$csdomain);
@@ -547,40 +546,31 @@ implements Target_Selectable
             $this->search_endpoint = $search_endpoint;
             $this->document_endpoint = $document_endpoint;
         }
-        else if(is_null($this->cloudsearch_domain))
+        else
         {
-            $config = Kohana::$config->load('cloudsearch')->as_array();
-            $config['domain'] = $info->get_domain_name();
+            $config = Kohana::$config->load('cloudsearch.login');
+            $config['domain'] = Kohana::$config->load('cloudsearch.domain_name');
             $cloudsearch = new AmazonCloudsearch($config);
-            $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
+            $response = $cloudsearch->describe_domains
+                (array('DomainNames' => $csdomain));
             if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
             {
                 echo json_encode($response->body) . "\n";
-                throw new Exception("No domain named " . $config['domain']);
+                throw new Exception("No domain named " . $csdomain);
             }
             $domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
-
-            $config = Kohana::$config->load('cloudsearch')->as_array();
-            $config['domain'] = $info->get_domain_name();
-            $cloudsearch = new AmazonCloudsearch($config);
-            $response = $cloudsearch->describe_domains(array('DomainNames' => $config['domain']));
-            if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
-            {
-                echo json_encode($response->body) . "\n";
-                throw new Exception("No domain named " . $config['domain']);
-            }
-            $this->cloudsearch_domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
-           
+            
             $search_endpoint = $domain->SearchService->Endpoint->to_string();
             //@TODO put hardcoded stuff into config files
             // date is AWS version number, probably wont change
             $this->search_endpoint = sprintf('http://%s/2011-02-01/search?', $search_endpoint) ;
             
             $document_endpoint = $domain->DocService->Endpoint->to_string();
-            $this->document_endpoint = $document_endpoint;
+            $this->document_endpoint = sprintf('http://%s/2011-02-01/documents/batch', $document_endpoint);
             
             $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
             
+            error_log("CS domain: " . $csdomain . "; search endpoint: " . $this->search_endpoint . "; document endpoint: " . $this->document_endpoint);
             $memcache->set('cloudsearch_search_endpoint'.$csdomain, $this->search_endpoint, false, $cache_ttl);
             $memcache->set('cloudsearch_document_endpoint'.$csdomain, $this->document_endpoint, false, $cache_ttl);
             

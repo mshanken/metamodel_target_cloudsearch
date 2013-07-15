@@ -97,8 +97,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         } 
                         else 
                         {
-                            if (($type instanceof Type_WineColor)
-                                || ($type instanceof Type_WineType))
+                            if ($type instanceof Type_Enum)
                             {
                                 $facet_enabled = TRUE;
                             }

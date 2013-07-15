@@ -74,7 +74,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     
                     $field_definitions[$field_name] = $field_definition;
                 }
-
+                
                 foreach(array('key', 'cloudsearch_indexer') as $view_name)
                 {
                     foreach($entity[$view_name]->get_children() as $column_name => $type) 
@@ -130,7 +130,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     }
                 }
                 
-                $text_field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . 'text';
+                $text_field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD;
                 $field_definitions[$text_field_name] =
                     array('type' => 'text',
                           'facet_enabled' => FALSE,

@@ -16,6 +16,7 @@ implements Target_Selectable
     const VIEW_INDEXER = 'cloudsearch_indexer';
 
     const DELIMITER = '__x__';
+    const UNIVERSAL_SEARCH_FIELD = 'text';
 
     /**
      * URL of AWS cloudsearch API

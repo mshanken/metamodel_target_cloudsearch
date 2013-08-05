@@ -16,6 +16,7 @@ implements Target_Selectable
     const VIEW_INDEXER = 'cloudsearch_indexer';
 
     const DELIMITER = '__x__';
+    const UNIVERSAL_SEARCH_FIELD = 'text';
 
     /**
      * URL of AWS cloudsearch API
@@ -334,18 +335,11 @@ implements Target_Selectable
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);
-        if($column_name == "text")
-        {
-            $field_name = "text";
-        }
-        else
-        {
-            $field_name = sprintf("%s%s%s"
-                , $this->clean_field_name($entity->get_root()->get_name())
-                , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
-            );
-        }
+        $field_name = sprintf("%s%s%s"
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+        );
         
         // Build search query with wildcard and exact for each word in string
         for($i=0;$i<count($search_terms);$i++)

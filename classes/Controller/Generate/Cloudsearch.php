@@ -35,13 +35,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
     public function build_polymorphic_domain() 
     {
         $field_definitions = array();
-        $text_sources = array();
         
         foreach($this->get_entity_class_names() as $entity_class_name) {
             $entity_class = new ReflectionClass($entity_class_name);
             $interface_names = $entity_class->getInterfaceNames();
             if(in_array('Target_Cloudsearchable', $interface_names))
             {
+                $text_sources = array();
+                
                 $entity = $entity_class_name::factory();
                 $entity_name = $entity->get_root()->get_name();
                 $entity_name_cleaned = $this->clean_field_name($entity_name);
@@ -73,7 +74,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     
                     $field_definitions[$field_name] = $field_definition;
                 }
-
+                
                 foreach(array('key', 'cloudsearch_indexer') as $view_name)
                 {
                     foreach($entity[$view_name]->get_children() as $column_name => $type) 
@@ -96,8 +97,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         } 
                         else 
                         {
-                            if (($type instanceof Type_WineColor)
-                                || ($type instanceof Type_WineType))
+                            if ($type instanceof Type_Enum)
                             {
                                 $facet_enabled = TRUE;
                             }
@@ -128,17 +128,18 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         $field_definitions[$field_name] = $field_definition;
                     }
                 }
+                
+                $text_field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD;
+                $field_definitions[$text_field_name] =
+                    array('type' => 'text',
+                          'facet_enabled' => FALSE,
+                          'result_enabled' => FALSE,
+                          'sources' => array());
+                foreach($text_sources as $source) {
+                    $field_definitions[$text_field_name]['sources'][] =
+                        array('source_name' => $source, 'type' => 'copy');
+                }
             }
-        }
-        
-        $field_definitions['text'] =
-            array('type' => 'text',
-                  'facet_enabled' => FALSE,
-                  'result_enabled' => FALSE,
-                  'sources' => array());
-        foreach($text_sources as $source) {
-            $field_definitions['text']['sources'][] =
-                array('source_name' => $source, 'type' => 'copy');
         }
         
         $field_definitions['payload'] =

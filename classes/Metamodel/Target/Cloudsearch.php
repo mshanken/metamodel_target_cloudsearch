@@ -549,7 +549,7 @@ implements Target_Selectable
         }
         else
         {
-            $config = Kohana::$config->load('cloudsearch.login');
+            $config = Kohana::$config->load('cloudsearch')->as_array();
             $config['domain'] = Kohana::$config->load('cloudsearch.domain_name');
             $cloudsearch = new AmazonCloudsearch($config);
             $response = $cloudsearch->describe_domains

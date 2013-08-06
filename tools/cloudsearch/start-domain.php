@@ -42,7 +42,7 @@ function encode_integer($integer) {
 }
 
 
-$config = Kohana::$config->load('cloudsearch.login');
+$config = Kohana::$config->load('cloudsearch');
 $cloudsearch = new AmazonCloudSearch($config);
 $domain_name = $argv[1];
 $description = json_decode(file_get_contents($argv[2]), true);

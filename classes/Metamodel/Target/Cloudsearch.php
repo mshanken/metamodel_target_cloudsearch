@@ -16,6 +16,7 @@ implements Target_Selectable
     const VIEW_INDEXER = 'cloudsearch_indexer';
 
     const DELIMITER = '__x__';
+    const UNIVERSAL_SEARCH_FIELD = 'text';
 
     /**
      * URL of AWS cloudsearch API
@@ -334,18 +335,11 @@ implements Target_Selectable
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);
-        if($column_name == "text")
-        {
-            $field_name = "text";
-        }
-        else
-        {
-            $field_name = sprintf("%s%s%s"
-                , $this->clean_field_name($entity->get_root()->get_name())
-                , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
-            );
-        }
+        $field_name = sprintf("%s%s%s"
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
+        );
         
         // Build search query with wildcard and exact for each word in string
         for($i=0;$i<count($search_terms);$i++)
@@ -555,7 +549,13 @@ implements Target_Selectable
         }
         else
         {
-            $config = Kohana::$config->load('cloudsearch.login');
+            $config_in = Kohana::$config->load('cloudsearch')->as_array();
+            $config = array(
+                'key' => $config_in['key'],
+                'secret' => $config_in['secret'],
+                'default_cache_config' => $config_in['default_cache_config'],
+                'certificate_authority' => $config_in['certificate_authority'],
+            );
             $config['domain'] = Kohana::$config->load('cloudsearch.domain_name');
             $cloudsearch = new AmazonCloudsearch($config);
             $response = $cloudsearch->describe_domains

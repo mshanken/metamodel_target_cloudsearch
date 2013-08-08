@@ -242,6 +242,23 @@ implements Target_Selectable
         $fields = array();
         $fields['entity'] = $entity_name;
         $fields['payload'] = json_encode($payload);
+        $override_class_name = 'Entity_Override_' . implode('_', array_map('ucwords', explode('_', $entity_name)));
+        if(class_exists($override_class_name))
+        {
+            $override_class = new $override_class_name();
+            if($override_class instanceof Entity_Override_Cloudsearch)
+            {
+                $override = array($override_class, 'cloudsearch_indexer_override');
+            }
+            else
+            {
+                $override = NULL;
+            }
+        }
+        else
+        {
+            $override = NULL;
+        }
         foreach(array('cloudsearch_indexer', 'cloudsearch_facets') as $view_name)
         {
             $children = $entity[$view_name]->get_children();
@@ -256,10 +273,19 @@ implements Target_Selectable
                 if(($child instanceof Entity_Array_Nested)
                    && !($child instanceof Entity_Array_Pivot))
                 {
+                    if($override) {
+                        $temporary = array();
+                        foreach($value as $subvalue)
+                        {
+                            $temporary[] = call_user_func($override, $alias, $subvalue);
+                        }
+                        $value = $temporary;
+                    }
                     $value = array_map('json_encode', $value);
                 }
                 else if($child instanceof Entity_Columnset)
                 {
+                    if($override) $value = call_user_func($override, $alias, $value);
                     $value = json_encode($value);
                 }
                 $fields[$entity_name . '__x__' . $this->clean_field_name($alias)] = $value;

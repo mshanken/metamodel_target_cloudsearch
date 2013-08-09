@@ -269,23 +269,15 @@ implements Target_Selectable
             }
             foreach($array as $alias => $value)
             {
+                if($override) $value = call_user_func($override, $alias, $value);
                 $child = $children[$alias];
                 if(($child instanceof Entity_Array_Nested)
                    && !($child instanceof Entity_Array_Pivot))
                 {
-                    if($override) {
-                        $temporary = array();
-                        foreach($value as $subvalue)
-                        {
-                            $temporary[] = call_user_func($override, $alias, $subvalue);
-                        }
-                        $value = $temporary;
-                    }
                     $value = array_map('json_encode', $value);
                 }
                 else if($child instanceof Entity_Columnset)
                 {
-                    if($override) $value = call_user_func($override, $alias, $value);
                     $value = json_encode($value);
                 }
                 $fields[$entity_name . '__x__' . $this->clean_field_name($alias)] = $value;

@@ -79,13 +79,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 {
                     foreach($entity[$view_name]->get_children() as $column_name => $type) 
                     {
-                        while ($type instanceof Entity_Array || $type instanceof Entity_Pivot)
+                        while ($type instanceof Entity_Array
+                                || $type instanceof Entity_Columnset_Join)
                         {
                             $temporary = $type->get_children();
-                            $type = $temporary[0];
+                            $type = array_shift($temporary);
                         }
     
-                        if($type instanceof Type_FreeText)
+                        if($type instanceof Type_Freetext)
                         {
                             $field_definition = array('type' => 'text',
                                                       'facet_enabled' => FALSE,

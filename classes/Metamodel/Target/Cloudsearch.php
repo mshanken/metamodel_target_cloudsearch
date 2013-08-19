@@ -668,11 +668,6 @@ implements Target_Selectable
 
     public function lookup_entanglement_name($entity, $entanglement_name)
     {
-        if ($entanglement_name == 'text')  // @TODO magic, special case too.
-        {
-            return 'text';
-        }
-
         foreach(array(Target_Cloudsearch::VIEW_INDEXER, Target_Cloudsearch::VIEW_FACETS) as $view)
         {
             $result = $entity[$view]->lookup_entanglement_name($entanglement_name);
@@ -682,8 +677,8 @@ implements Target_Selectable
             }
         }
 
-        throw new Exception('Cannot Find '. $entanglement_name);
-        // return NULL;
+        // throw new Exception('Cannot Find '. $entanglement_name);
+        return $entanglement_name;
     }
  
 }

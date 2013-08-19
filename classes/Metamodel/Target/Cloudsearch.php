@@ -156,7 +156,6 @@ implements Target_Selectable
     { 
         $cloudsearch_endpoint = $this->get_document_endpoint();
         
-        /* IAK
         $clob = '[' . $this->targetize($entity) . ']';
         $curl = curl_init($cloudsearch_endpoint);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
@@ -168,7 +167,6 @@ implements Target_Selectable
 
         $succeeded = ($response_info['http_code'] == 200);
         $throttled = ($response_info['http_code'] == 100);
-        */
 
         // @TODO no return ?  what does throttled do ?
     }
@@ -203,7 +201,6 @@ implements Target_Selectable
         
         $cloudsearch_endpoint = $this->get_document_endpoint();
         
-        /* IAK
         $curl = curl_init($cloudsearch_endpoint);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -213,7 +210,6 @@ implements Target_Selectable
         $response_info = curl_getinfo($curl);
         $succeeded = ($response_info['http_code'] == 200);
         $throttled = ($response_info['http_code'] == 100);
-        */
 
         //@TODO returns ? throttled ?
     }

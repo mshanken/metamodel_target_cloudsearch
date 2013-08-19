@@ -92,24 +92,27 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                                                       'facet_enabled' => FALSE,
                                                       'result_enabled' => FALSE);
                         } 
+                        else if ($type instanceof Type_Date)
+                        {
+                            // Cloudsearch auto sets (for uint type)
+                            //   facet Enabled  = TRUE
+                            //   result Enabled = TRUE
+                            //   search enabled = TRUE
+                            $field_definition = array('type' => 'uint');
+                        } 
                         else if ($type instanceof Type_Number)
                         {
+                            // Cloudsearch auto sets (for uint type)
+                            //   facet Enabled  = TRUE
+                            //   result Enabled = TRUE
+                            //   search enabled = TRUE
                             $field_definition = array('type' => 'uint');
                         } 
                         else 
                         {
-                            if ($type instanceof Type_Enum)
-                            {
-                                $facet_enabled = TRUE;
-                            }
-                            else
-                            {
-                                $facet_enabled = FALSE;
-                            }
-                            
                             $field_definition = array('type' => 'literal',
                                                       'search_enabled' => TRUE,
-                                                      'facet_enabled' => $facet_enabled,
+                                                      'facet_enabled' => ($type instanceof Type_Enum),
                                                       'result_enabled' => FALSE);
                         }
                         /*

@@ -48,13 +48,15 @@ implements Target_Selectable
         $base_query = $selector->build_target_query($entity, $this);
         $field_query = sprintf("(field entity '%s')",
             strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\")));
-        if(is_null($base_query)) {
+        if(is_null($base_query))
+        {
             $query_parameters['bq'] = $field_query;
         }
         else
         {
             $query_parameters['bq'] = sprintf("(and %s %s)", $field_query, $base_query);
         }
+
         $query_parameters['return-fields'] = 'payload';
 
         if ($rank = $selector->build_target_sort($entity, $this)) $query_parameters['rank'] = $rank;
@@ -87,6 +89,7 @@ implements Target_Selectable
             $key = sprintf('facet-%s%s%s-constraints', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
             $facet_parameters[$key] = implode(',', $facet_constraints[$k]);
         }
+
         $query_parameters = array_merge($query_parameters, $facet_parameters);
         $query_string = http_build_query($query_parameters);
 
@@ -104,15 +107,18 @@ implements Target_Selectable
         $response_body = curl_exec($session);
         $response = Parse::json_parse($response_body, true);
         $response_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
+        
         if($response_code == 100)
         {
             throw new HTTP_Exception_100('Throttled.');
-        } else if($response_code != 200) 
+        } 
+        else if($response_code != 200) 
         {
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']
               . ' ... the URL we hit was: ' . $url);
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
+
         curl_close($session);
        
         Metamodel_Target_Cloudsearch::$elapsed = $response['info']['time-ms'] / 1000.0;
@@ -128,7 +134,9 @@ implements Target_Selectable
         if (array_key_exists('facets', $response)) 
         {
             $this->facets = $response['facets'];
-        } else {
+        } 
+        else 
+        {
             $this->facets = array();
         }
         
@@ -197,6 +205,7 @@ implements Target_Selectable
                 'version' => time(),
             ));
         }
+
         $concatenated = sprintf('[%s]', implode('.', $clob));
         
         $cloudsearch_endpoint = $this->get_document_endpoint();
@@ -255,6 +264,7 @@ implements Target_Selectable
         {
             $override = NULL;
         }
+
         foreach(array('cloudsearch_indexer', 'cloudsearch_facets') as $view_name)
         {
             $children = $entity[$view_name]->get_children();
@@ -283,11 +293,13 @@ implements Target_Selectable
             if(is_null($value)) $fields[$name] = '';
             else if(is_array($value) && !count($value)) $fields[$name] = array('');
         }
+
         $id_values = array();
         foreach($entity['key']->to_array() as $alias => $value)
         {
             $id_values[] = $value;
         }
+
         $id = $this->clean_field_name($entity_name) . '_' . $this->clean_field_name(implode('_', $id_values));
         $document_add = array();
         $document_add['type'] = 'add';
@@ -332,7 +344,9 @@ implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
         );
-        if($info->is_numeric($column_name)) {
+
+        if($info->is_numeric($column_name))
+        {
             return sprintf("(field %s %s)", $column_name_renamed, $param);
         } else {
             return sprintf("(field %s '%s')", $column_name_renamed,
@@ -391,7 +405,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_min($entity, $column_name, $param) {
+    public function visit_min($entity, $column_name, $param) 
+    {
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -405,7 +420,10 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_range($entity, $column_name, $min, $max) {
+    public function visit_range($entity, $column_name, $min, $max) 
+    {
+
+
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -420,7 +438,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_isnull($entity, $column_name) {
+    public function visit_isnull($entity, $column_name) 
+    {
         $info = $entity->get_root()->get_target_info($this);
         return sprintf("(not (field %s%s%s '*'))"
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -433,7 +452,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_and($entity, array $parts) {
+    public function visit_operator_and($entity, array $parts) 
+    {
         if(count($parts) > 0)
             return sprintf('(and %s)', implode(' ', $parts));
         else
@@ -444,7 +464,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_or($entity, array $parts) {
+    public function visit_operator_or($entity, array $parts) 
+    {
         if(count($parts) > 0)
             return sprintf('(or %s)', implode(' ', $parts));
         else
@@ -455,7 +476,8 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_not($entity, $part) {
+    public function visit_operator_not($entity, $part) 
+    {
         return sprintf('(not %s)', $part);
     }
     
@@ -463,14 +485,16 @@ implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_page($entity, $limit, $offset = 0) {
+    public function visit_page($entity, $limit, $offset = 0) 
+    {
     }
     
     /**
      * satisfy selector visitor interface
      *
      */
-    public function visit_sort($entity, array $items) {
+    public function visit_sort($entity, array $items) 
+    {
         $result = "";
         $i = 0;
         foreach($items as $item)

@@ -391,6 +391,13 @@ implements Target_Selectable
      *
      */
     public function visit_max($entity, $column_name, $param) {
+
+        if (!is_numeric($param))
+        {
+            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param);
+            $param = $date->format('U');
+        }
+
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -407,6 +414,12 @@ implements Target_Selectable
      */
     public function visit_min($entity, $column_name, $param) 
     {
+        if (!is_numeric($param))
+        {
+            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param);
+            $param = $date->format('U');
+        }
+
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -422,7 +435,17 @@ implements Target_Selectable
      */
     public function visit_range($entity, $column_name, $min, $max) 
     {
+        if (!is_numeric($min))
+        {
+            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $min);
+            $min = $date->format('U');
+        }
 
+        if (!is_numeric($max))
+        {
+            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $max);
+            $max = $date->format('U');
+        }
 
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..%s)'

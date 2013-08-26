@@ -74,8 +74,6 @@ implements Target_Cloudsearchable
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['multiple'] = array($multiple);
 
         $info = new Target_Info_Cloudsearch();
-        $info->set_id_field('primary_id');
-        $info->set_domain_name('nonexistent');
         $this->set_target_info(new Target_Cloudsearch(), $info);
     }
     

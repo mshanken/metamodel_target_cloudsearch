@@ -366,11 +366,26 @@ implements Target_Selectable
         // Build search query with wildcard and exact for each word in string
         for($i=0;$i<count($search_terms);$i++)
         {
+            $search_term = $search_terms[$i];
+            $temporary = "";
+            for($j = 0; $j < strlen($search_term); $j++)
+            {
+                if(preg_match('/^[a-zA-Z0-9]$/', $search_term[$j]))
+                {
+                    $temporary .= $search_term[$j];
+                }
+                else if($search_term[$j] == '\'')
+                {
+                    $temporary .= '\\\'';
+                }
+            }
+            $search_term = $temporary;
+            
             $search_terms[$i] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
                 $field_name,
-                $search_terms[$i],
+                $search_term,
                 $field_name,
-                $search_terms[$i]
+                $search_term
             );
         }
         

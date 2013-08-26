@@ -275,6 +275,8 @@ implements Target_Selectable
             }
             foreach($array as $alias => $value)
             {
+                $value = $this->type_transform($entity, $entity[$view_name]->get_entanglement_name($alias), $value);
+
                 $json_encode = TRUE;
                 if($override) {
                     $override_result = call_user_func($override, $alias, $value);
@@ -346,6 +348,8 @@ implements Target_Selectable
      *
      */
     public function visit_exact($entity, $column_name, $param) {
+        $param = $this->type_transform($entity, $column_name, $param);
+
         $info = $entity->get_root()->get_target_info($this);
         $column_name_renamed = sprintf('%s%s%s'
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -368,6 +372,8 @@ implements Target_Selectable
      *
      */
     public function visit_search($entity, $column_name, $param) {
+        $param = $this->type_transform($entity, $column_name, $param);
+
         $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);
@@ -395,19 +401,49 @@ implements Target_Selectable
     }
     
     /**
+     *
+     */
+    public function type_transform($entity, $column_name, $param) 
+    {   
+        $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
+        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+
+        if (!array_key_exists($alias, $children))
+        {
+            return $param;
+        }
+        
+        if ($children[$alias] instanceof Type_Date)
+        {
+           if (!is_numeric($param))
+            {
+                if ($date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param)) {}
+                else if ($date = DateTime::createFromFormat('Y-m-d G:i:s', $param)) {}
+                else if ($date = DateTime::createFromFormat('Y-m-d', $param)) {}
+                else
+                {
+                    throw new HTTP_Exception_400(sprintf('Invalid Date Format %s', $param));
+                }
+                return $date->format('U');
+            }
+        }
+        else
+        {
+            return $param;
+        }
+
+    }
+
+    /**
      * satisfy selector visitor interface
      *
      */
-    public function visit_max($entity, $column_name, $param) {
-
-        if (!is_numeric($param))
-        {
-            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param);
-            $param = $date->format('U');
-        }
+    public function visit_max($entity, $column_name, $param) 
+    {
+        $param = $this->type_transform($entity, $column_name, $param);
 
         $info = $entity->get_root()->get_target_info($this);
-        return sprintf('(filter %s%s%s %s..)'
+        return sprintf('(filter %s%s%s ..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($this->lookup_entanglement_name($entity, $column_name))
@@ -422,11 +458,7 @@ implements Target_Selectable
      */
     public function visit_min($entity, $column_name, $param) 
     {
-        if (!is_numeric($param))
-        {
-            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param);
-            $param = $date->format('U');
-        }
+        $param = $this->type_transform($entity, $column_name, $param);
 
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..)'
@@ -443,17 +475,8 @@ implements Target_Selectable
      */
     public function visit_range($entity, $column_name, $min, $max) 
     {
-        if (!is_numeric($min))
-        {
-            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $min);
-            $min = $date->format('U');
-        }
-
-        if (!is_numeric($max))
-        {
-            $date = DateTime::createFromFormat('Y-m-d G:i:s.u', $max);
-            $max = $date->format('U');
-        }
+        $min = $this->type_transform($entity, $column_name, $min);
+        $max = $this->type_transform($entity, $column_name, $max);
 
         $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..%s)'

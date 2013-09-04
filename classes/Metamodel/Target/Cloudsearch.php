@@ -61,12 +61,11 @@ implements Target_Selectable
 
         if ($rank = $selector->build_target_sort($entity, $this)) $query_parameters['rank'] = $rank;
 
-        $sort_page = $selector->getPageInfo();
-        if(!empty($sort_page[Selector::PAGE])) 
+        $page = $selector->build_target_page($entity, $this);
+        if(!is_null($page)) 
         {
-            $params = $sort_page[Selector::PAGE];
-            $query_parameters['start'] = $params[0];
-            $query_parameters['size'] = $params[1];
+            $query_parameters['start'] = $page[0];
+            $query_parameters['size'] = $page[1];
         }
 
         $facet_constraints = $info->get_facet_constraints();
@@ -556,6 +555,7 @@ implements Target_Selectable
      */
     public function visit_page($entity, $limit, $offset = 0) 
     {
+        return array($offset, $limit);
     }
     
     /**

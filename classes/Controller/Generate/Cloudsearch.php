@@ -79,18 +79,20 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 {
                     foreach($entity[$view_name]->get_children() as $column_name => $type) 
                     {
+                        $sortable = $entity[$view_name]->get_attribute(Selector::SORTABLE, $column_name);
+                        
                         while ($type instanceof Entity_Array
                                 || $type instanceof Entity_Columnset_Join)
                         {
                             $temporary = $type->get_children();
                             $type = array_shift($temporary);
                         }
-    
+     
                         if($type instanceof Type_Freetext)
                         {
                             $field_definition = array('type' => 'text',
                                                       'facet_enabled' => FALSE,
-                                                      'result_enabled' => FALSE);
+                                                      'result_enabled' => $sortable);
                         } 
                         else if ($type instanceof Type_Date)
                         {
@@ -113,7 +115,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                             $field_definition = array('type' => 'literal',
                                                       'search_enabled' => TRUE,
                                                       'facet_enabled' => ($type instanceof Type_Enum),
-                                                      'result_enabled' => FALSE);
+                                                      'result_enabled' => $sortable);
                         }
                         /*
                         $field_definition['debug'] = array(

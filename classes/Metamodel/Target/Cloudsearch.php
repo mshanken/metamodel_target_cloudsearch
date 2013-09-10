@@ -431,6 +431,8 @@ implements Target_Selectable
         {
            if (!is_numeric($param))
             {
+                if($param == "") return 0;
+                
                 if ($date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param)) {}
                 else if ($date = DateTime::createFromFormat('Y-m-d G:i:s', $param)) {}
                 else if ($date = DateTime::createFromFormat('Y-m-d', $param)) {}

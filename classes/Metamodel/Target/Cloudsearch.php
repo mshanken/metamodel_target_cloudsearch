@@ -431,8 +431,6 @@ implements Target_Selectable
         {
            if (!is_numeric($param))
             {
-                if($param == "") return 0;
-                
                 if ($date = DateTime::createFromFormat('Y-m-d G:i:s.u', $param)) {}
                 else if ($date = DateTime::createFromFormat('Y-m-d G:i:s', $param)) {}
                 else if ($date = DateTime::createFromFormat('Y-m-d', $param)) {}
@@ -448,6 +446,50 @@ implements Target_Selectable
             return $param;
         }
 
+    }
+    
+    /**
+     * Return an array of valid methods which can be performed on the given type,
+     * as defined by constants in the Selector class.
+     */
+    public function visit_selector_security(Type_Typeable $type, $sortable) {
+        if($type instanceof Type_FreeText)
+        {
+            $result = array(
+                Selector::SEARCH,
+                Selector::ISNULL,
+            );
+        } 
+        else if ($type instanceof Type_Number)
+        {
+            $result = array(
+                Selector::EXACT,
+                Selector::RANGE_MAX,
+                Selector::RANGE_MIN,
+                Selector::RANGE,
+                Selector::ISNULL,
+            );
+        } 
+        else if ($type instanceof Type_Date)
+        {
+            $result = array(
+                Selector::EXACT,
+                Selector::RANGE_MAX,
+                Selector::RANGE_MIN,
+                Selector::RANGE,
+            );
+        }
+        else if ($type instanceof Type_Typeable)
+        {
+            $result = array(
+                Selector::SEARCH,
+                Selector::EXACT,
+                Selector::ISNULL,
+            );
+        }
+        
+        if($sortable) $result[] = Selector::SORT;
+        return $result;
     }
 
     /**

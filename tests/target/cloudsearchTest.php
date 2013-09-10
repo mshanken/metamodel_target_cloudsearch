@@ -10,11 +10,11 @@ implements Target_Cloudsearchable
         
         $this['key'] = new Entity_Columnset('key');
         $this['key']['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
-        $this['key']->set_required('primary_id');
+        $this['key']->set_attribute(Entity_Root::REQUIRED, 'primary_id');
 
         $this['timestamp'] = new Entity_Columnset('timestamp');
         $this['timestamp']['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
-        $this['timestamp']->set_required('modified_at');
+        $this['timestamp']->set_attribute(Entity_Root::REQUIRED, 'modified_at');
 
         $this['api'] = new Entity_Columnset('api');
         $this['api']['name'] = new Entity_Column('name', Type::factory('string'));
@@ -22,7 +22,7 @@ implements Target_Cloudsearchable
         $this['api']['related'] = new Entity_Columnset('related');
         $this['api']['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
         $this['api']['related']['related_name'] = new Entity_Column('related_name', Type::factory('string'));
-        $this['api']['related']->set_required('related_name');
+        $this['api']['related']->set_attribute(Entity_Root::REQUIRED, 'related_name');
         
         $multiple = new Entity_ColumnSet('multiple');
         $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
@@ -66,7 +66,7 @@ implements Target_Cloudsearchable
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['related'] = new Entity_Columnset('related');
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
         $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['name'] = new Entity_Column('related_name', Type::factory('string'));
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']->set_required('name');
+        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']->set_attribute(Entity_Root::REQUIRED, 'name');
         
         $multiple = new Entity_ColumnSet('multiple');
         $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));

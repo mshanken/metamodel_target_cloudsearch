@@ -264,40 +264,8 @@ implements Target_Selectable
             $override = NULL;
         }
 
-        foreach(array('cloudsearch_indexer', 'cloudsearch_facets') as $view_name)
-        {
-            $children = $entity[$view_name]->get_children();
-            $array = $entity[$view_name]->to_array();
-            if(is_null($array))
-            {
-                $array = array();
-            }
-            foreach($array as $alias => $value)
-            {
-                $value = $this->type_transform($entity, $entity[$view_name]->get_entanglement_name($alias), $value);
-
-                $json_encode = TRUE;
-                if($override) {
-                    $override_result = call_user_func($override, $alias, $value);
-                    $value = $override_result['value'];
-                    $json_encode = $override_result['json_encode'];
-                }
-                if($json_encode)
-                {
-                    $child = $children[$alias];
-                    if(($child instanceof Entity_Array_Nested)
-                       && !($child instanceof Entity_Array_Pivot))
-                    {
-                        $value = array_map('json_encode', $value);
-                    }
-                    else if($child instanceof Entity_Columnset)
-                    {
-                        $value = json_encode($value);
-                    }
-                }
-                $fields[$entity_name . '__x__' . $this->clean_field_name($alias)] = $value;
-            }
-        }
+        $this->targetize_helper($fields, $entity['cloudsearch_indexer'], $entity_name, $entity, $override, TRUE);
+        $this->targetize_helper($fields, $entity['cloudsearch_facets'], $entity_name, $entity, $override, FALSE);
         foreach($fields as $name => $value) {
             if(is_null($value)) $fields[$name] = '';
             else if(is_array($value) && !count($value)) $fields[$name] = array('');
@@ -317,6 +285,60 @@ implements Target_Selectable
         $document_add['version'] = $timestamp;
         $document_add['fields'] = $fields;
         return json_encode($document_add);
+    }
+    
+    
+    private function targetize_helper(&$fields, $structure, $entity_name, $entity, $override, $columnsets_special_cased)
+    {
+        $children = $structure->get_children();
+        $array = $structure->to_array();
+        if(is_null($array))
+        {
+            $array = array();
+        }
+        foreach($array as $alias => $value)
+        {
+            $value = $this->type_transform($entity, $structure->get_entanglement_name($alias), $value);
+
+            $json_encode = TRUE;
+            if($override) {
+                $override_result = call_user_func($override, $alias, $value);
+                $value = $override_result['value'];
+                $json_encode = $override_result['json_encode'];
+            }
+            if($json_encode)
+            {
+                $child = $children[$alias];
+                if(($child instanceof Entity_Array_Nested)
+                   && !($child instanceof Entity_Array_Pivot))
+                {
+                    $value = array_map('json_encode', $value);
+                }
+                else if($child instanceof Entity_Columnset)
+                {
+                    if($columnsets_special_cased)
+                    {
+                        $this->targetize_helper($fields, $child, $entity_name, $entity, $override, FALSE);
+                    }
+                    else
+                    {
+                        $value = json_encode($value);
+                    }
+                }
+            }
+            $field_name = $entity_name . '__x__' . $this->clean_field_name($alias);
+            if(!array_key_exists($field_name, $fields))
+            {
+                $fields[$field_name] = $value;
+            }
+            else
+            {
+                $old_value = $fields[$field_name];
+                if(!is_array($old_value)) $old_value = array($old_value);
+                if(!is_array($value)) $value = array($value);
+                $fields[$field_name] = array_merge($old_value, $value);
+            }
+        }
     }
     
 

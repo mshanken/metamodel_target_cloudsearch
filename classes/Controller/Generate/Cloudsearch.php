@@ -77,60 +77,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 
                 foreach(array('key', 'cloudsearch_indexer') as $view_name)
                 {
-                    foreach($entity[$view_name]->get_children() as $column_name => $type) 
-                    {
-                        while ($type instanceof Entity_Array
-                                || $type instanceof Entity_Columnset_Join)
-                        {
-                            $temporary = $type->get_children();
-                            $type = array_shift($temporary);
-                        }
-    
-                        if($type instanceof Type_Freetext)
-                        {
-                            $field_definition = array('type' => 'text',
-                                                      'facet_enabled' => FALSE,
-                                                      'result_enabled' => FALSE);
-                        } 
-                        else if ($type instanceof Type_Date)
-                        {
-                            // Cloudsearch auto sets (for uint type)
-                            //   facet Enabled  = TRUE
-                            //   result Enabled = TRUE
-                            //   search enabled = TRUE
-                            $field_definition = array('type' => 'uint');
-                        } 
-                        else if ($type instanceof Type_Number)
-                        {
-                            // Cloudsearch auto sets (for uint type)
-                            //   facet Enabled  = TRUE
-                            //   result Enabled = TRUE
-                            //   search enabled = TRUE
-                            $field_definition = array('type' => 'uint');
-                        } 
-                        else 
-                        {
-                            $field_definition = array('type' => 'literal',
-                                                      'search_enabled' => TRUE,
-                                                      'facet_enabled' => ($type instanceof Type_Enum),
-                                                      'result_enabled' => FALSE);
-                        }
-                        /*
-                        $field_definition['debug'] = array(
-                            'type' => $type,
-                            'column' => $column_name,
-                            'gettype' => get_class($type),
-                        );
-                        */
-                        
-                        $column_name_cleaned = $this->clean_field_name($column_name);
-                        $field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . $column_name_cleaned;
-                        
-                        if($field_definition['type'] == 'text')
-                            $text_sources[] = $field_name;
-                        
-                        $field_definitions[$field_name] = $field_definition;
-                    }
+                    $this->build_polymorphic_domain_helper($entity[$view_name], $entity_name_cleaned, $field_definitions, $text_sources);
                 }
                 
                 $text_field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD;
@@ -161,6 +108,78 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         $domain_definition = array('index_fields' => $field_definitions);
     
         return $domain_definition;
+    }
+
+    private function build_polymorphic_domain_helper(Entity_Structure $view, $entity_name_cleaned, array &$field_definitions, array &$text_sources)
+    {
+        foreach($view->get_children() as $column_name => $type) 
+        {
+            $sortable = $view->get_attribute(Selector::SORTABLE, $column_name);
+            
+            while ($type instanceof Entity_Array
+                    || $type instanceof Entity_Columnset_Join)
+            {
+                $temporary = $type->get_children();
+                $type = array_shift($temporary);
+            }
+
+            if($type instanceof Type_Freetext)
+            {
+                $field_definition = array('type' => 'text',
+                                          'facet_enabled' => FALSE,
+                                          'result_enabled' => $sortable);
+            } 
+            else if ($type instanceof Type_Date)
+            {
+                // Cloudsearch auto sets (for uint type)
+                //   facet Enabled  = TRUE
+                //   result Enabled = TRUE
+                //   search enabled = TRUE
+                $field_definition = array('type' => 'uint');
+            } 
+            else if ($type instanceof Type_Number)
+            {
+                // Cloudsearch auto sets (for uint type)
+                //   facet Enabled  = TRUE
+                //   result Enabled = TRUE
+                //   search enabled = TRUE
+                $field_definition = array('type' => 'uint');
+            } 
+            else if ($type instanceof Type_Typeable)
+            {
+                $field_definition = array('type' => 'literal',
+                                          'search_enabled' => TRUE,
+                                          'facet_enabled' => ($type instanceof Type_Enum),
+                                          'result_enabled' => $sortable);
+            }
+            else if ($type instanceof Entity_Structure)
+            {
+                $this->build_polymorphic_domain_helper($view[$column_name], $entity_name_cleaned, $field_definitions, $text_sources);
+                $field_definition = NULL;
+            }
+            else
+            {
+                $field_definition = NULL;
+            }
+            /*
+            $field_definition['debug'] = array(
+                'type' => $type,
+                'column' => $column_name,
+                'gettype' => get_class($type),
+            );
+            */
+            
+            if(!is_null($field_definition))
+            {
+                $column_name_cleaned = $this->clean_field_name($column_name);
+                $field_name = $entity_name_cleaned . Target_Cloudsearch::DELIMITER . $column_name_cleaned;
+            
+                if($field_definition['type'] == 'text')
+                    $text_sources[] = $field_name;
+            
+                $field_definitions[$field_name] = $field_definition;
+            }
+        }
     }
 
 }

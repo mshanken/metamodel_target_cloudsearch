@@ -47,12 +47,12 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 $entity_name = $entity->get_root()->get_name();
                 $entity_name_cleaned = $this->clean_field_name($entity_name);
                 
-                foreach($entity['cloudsearch_facets'] as $column_name => $column) 
+                foreach($entity[Target_Cloudsearch::VIEW_FACETS] as $column_name => $column) 
                 {
-                    $type = $entity['cloudsearch_facets'][$column_name];
+                    $type = $entity[Target_Cloudsearch::VIEW_FACETS][$column_name];
                     while($type instanceof Entity_Array ) //&& count($type)) 
                     {
-                        $type = $entity['cloudsearch_facets'][$column_name][0];    
+                        $type = $entity[Target_Cloudsearch::VIEW_FACETS][$column_name][0];    
                     }
 
                     if($type instanceof Entity_Columnset)
@@ -75,7 +75,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     $field_definitions[$field_name] = $field_definition;
                 }
                 
-                foreach(array('key', 'cloudsearch_indexer') as $view_name)
+                foreach(array('key', Target_Cloudsearch::VIEW_INDEXER) as $view_name)
                 {
                     $this->build_polymorphic_domain_helper($entity[$view_name], $entity_name_cleaned, $field_definitions, $text_sources);
                 }

@@ -37,13 +37,11 @@ implements Target_Selectable
     protected static $elapsed = null;
     
     /**
-     * implements selectable
+     * helper function for select()
      */
-    public function select(Entity_Row $entity, Selector $selector = null)
+    protected function get_query_params(Entity_Row $entity, Selector $selector = null)
     {
-        $info = $entity->get_root()->get_target_info($this);
-
-        $query_parameters = array();
+         $query_parameters = array();
 
         $base_query = $selector->build_target_query($entity, $this);
         $field_query = sprintf("(field entity '%s')",
@@ -59,7 +57,10 @@ implements Target_Selectable
 
         $query_parameters['return-fields'] = 'payload';
 
-        if ($rank = $selector->build_target_sort($entity, $this)) $query_parameters['rank'] = $rank;
+        if ($rank = $selector->build_target_sort($entity, $this))
+        {
+            $query_parameters['rank'] = $rank;
+        }
 
         $page = $selector->build_target_page($entity, $this);
         if(!is_null($page)) 
@@ -68,20 +69,31 @@ implements Target_Selectable
             $query_parameters['size'] = $page[1];
         }
 
+        return $query_parameters;
+    }
+
+    /**
+     * helper function for select()
+     */
+    protected function get_facet_params(Entity_Row $entity)
+    {
+        if (!count($entity[Target_Cloudsearch::VIEW_FACETS]))
+        {
+            return array();
+        }
+
+        $info = $entity->get_root()->get_target_info($this);
         $facet_constraints = $info->get_facet_constraints();
         $facet_parameters = array();
         $tmp = array();
-        if (count($entity[Target_Cloudsearch::VIEW_FACETS]))
+        foreach ($entity[Target_Cloudsearch::VIEW_FACETS] as $k => $v)
         {
-            foreach ($entity[Target_Cloudsearch::VIEW_FACETS] as $k => $v)
+            if (!array_key_exists($k, $facet_constraints))
             {
-                if (!array_key_exists($k, $facet_constraints))
-                {
-                    $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
-                }
+                $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
             }
-            $facet_parameters['facet'] = implode(',', $tmp);
         }
+        $facet_parameters['facet'] = implode(',', $tmp);
 
         foreach ($facet_constraints as $k => $v)
         {
@@ -89,23 +101,35 @@ implements Target_Selectable
             $facet_parameters[$key] = implode(',', $facet_constraints[$k]);
         }
 
+        return $facet_parameters;
+    }
+
+
+    /**
+     * implements selectable
+     */
+    public function select(Entity_Row $entity, Selector $selector = null)
+    {
+        $query_parameters = $this->get_query_params($entity, $selector);
+        $facet_parameters = $this->get_facet_params($entity);
+
         $query_parameters = array_merge($query_parameters, $facet_parameters);
         $query_string = http_build_query($query_parameters);
 
         // calls curl to aws
-        $url = $this->get_search_endpoint();
-
-        $url .= $query_string;
+        $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
-        $options = array();
-        
-        $options[CURLOPT_RETURNTRANSFER] = TRUE;
+
+        $options = array(
+            CURLOPT_RETURNTRANSFER => true,
+        );
         
         $session = curl_init($url);
         curl_setopt_array($session, $options);
-        $response_body = curl_exec($session);
-        $response = Parse::json_parse($response_body, true);
+        $raw = curl_exec($session);
+        $response = Parse::json_parse($raw, true);
         $response_code = curl_getinfo($session, CURLINFO_HTTP_CODE);
+        curl_close($session);
         
         if($response_code == 100)
         {
@@ -117,11 +141,14 @@ implements Target_Selectable
               . ' ... the URL we hit was: ' . $url);
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
-
-        curl_close($session);
        
         Metamodel_Target_Cloudsearch::$elapsed = $response['info']['time-ms'] / 1000.0;
-       
+   
+echo $url;
+die;
+
+echo $raw;die;
+
         $results = array();
         foreach($response['hits']['hit'] as $hit) 
         {
@@ -242,7 +269,7 @@ implements Target_Selectable
         $payload = array();
         $payload['key'] = $entity['key']->to_array();
         $payload['timestamp'] = $entity['timestamp']->to_array();
-        $payload['cloudsearch_payload'] = $entity['cloudsearch_payload']->to_array();
+        $payload[Target_Cloudsearch::VIEW_PAYLOAD] = $entity[Target_Cloudsearch::VIEW_PAYLOAD]->to_array();
         $fields = array();
         $fields['entity'] = $entity_name;
         $fields['payload'] = json_encode($payload);
@@ -264,8 +291,8 @@ implements Target_Selectable
             $override = NULL;
         }
 
-        $this->targetize_helper($fields, $entity['cloudsearch_indexer'], $entity_name, $entity, $override, TRUE);
-        $this->targetize_helper($fields, $entity['cloudsearch_facets'], $entity_name, $entity, $override, FALSE);
+        $this->targetize_helper($fields, $entity[Target_Cloudsearch::VIEW_INDEXER], $entity_name, $entity, $override, TRUE);
+        $this->targetize_helper($fields, $entity[Target_Cloudsearch::VIEW_FACETS], $entity_name, $entity, $override, FALSE);
         foreach($fields as $name => $value) {
             if(is_null($value)) $fields[$name] = '';
             else if(is_array($value) && !count($value)) $fields[$name] = array('');

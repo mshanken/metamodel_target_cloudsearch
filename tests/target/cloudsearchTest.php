@@ -12,9 +12,9 @@ implements Target_Cloudsearchable
         $this[Entity_Root::VIEW_KEY]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
         $this[Entity_Root::VIEW_KEY]->set_attribute(Entity_Root::REQUIRED, 'primary_id');
 
-        $thi = new Entity_Columnset('timestamp');
-        $thi['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
-        $thi->set_attribute(Entity_Root::REQUIRED, 'modified_at');
+        $this[Entity_Root::VIEW_TS] = new Entity_Columnset('timestamp');
+        $this[Entity_Root::VIEW_TS]['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
+        $this[Entity_Root::VIEW_TS]->set_attribute(Entity_Root::REQUIRED, 'modified_at');
 
         $this['api'] = new Entity_Columnset('api');
         $this['api']['name'] = new Entity_Column('name', Type::factory('string'));
@@ -88,7 +88,7 @@ class CloudsearchTest extends Unittest_TestCase
 
         $entity[Entity_Root::VIEW_KEY]['primary_id'] = 'f59dfde3-3919-4b58-c200-0cb83fd4ff54';
 
-        $entit['modified_at'] = '1357147485';
+        $entity[Entity_Root::VIEW_TS]['modified_at'] = '1357147485';
         $entity['api']['name'] = 'An Entity';
 
         $entity['api']['related']['related_id'] = 'd3db3422-c7a4-4a73-c8f4-e5940c02c2c1';
@@ -172,13 +172,10 @@ class CloudsearchTest extends Unittest_TestCase
         $entity2 = $target->columnize(Entity_Example::factory(), $mangled);
         
         $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $entity2[Entity_Root::VIEW_KEY]['primary_id']);
-        $this->assertEquals($entit['modified_at'],
-                            $entity['modified_at']);
+        $this->assertEquals($entity[Entity_Root::VIEW_TS]['modified_at'], $entity2[Entity_Root::VIEW_TS]['modified_at']);
         $this->assertEquals($entity['api']['name'], $entity2['api']['name']);
-        $this->assertEquals($entity['api']['related']['related_id'],
-                            $entity2['api']['related']['related_id']);
-        $this->assertEquals($entity['api']['related']['related_name'],
-                            $entity2['api']['related']['related_name']);
+        $this->assertEquals($entity['api']['related']['related_id'], $entity2['api']['related']['related_id']);
+        $this->assertEquals($entity['api']['related']['related_name'],$entity2['api']['related']['related_name']);
         $this->assertEquals(2, count($entity2['api']['multiple']));
         $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
                             $entity2['api']['multiple'][0]['multiple_id']);

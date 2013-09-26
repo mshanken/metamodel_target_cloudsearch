@@ -143,11 +143,6 @@ implements Target_Selectable
         }
        
         Metamodel_Target_Cloudsearch::$elapsed = $response['info']['time-ms'] / 1000.0;
-   
-echo $url;
-die;
-
-echo $raw;die;
 
         $results = array();
         foreach($response['hits']['hit'] as $hit) 
@@ -257,7 +252,7 @@ echo $raw;die;
     public function targetize(Entity_Row $entity) 
     { 
         $entity_name = $entity->get_root()->get_name();
-        $timestamp = $entit->to_array();
+        $timestamp = $entity[Entity_Root::VIEW_TS]->to_array();
         if(is_array($timestamp) && array_key_exists(0, $timestamp))
         {
             $timestamp = $timestamp[0];
@@ -268,7 +263,7 @@ echo $raw;die;
         }
         $payload = array();
         $payload[Entity_Root::VIEW_KEY] = $entity[Entity_Root::VIEW_KEY]->to_array();
-        $payloa = $entit->to_array();
+        $payload[Entity_Root::VIEW_TS] = $entity[Entity_Root::VIEW_TS]->to_array();
         $payload[Target_Cloudsearch::VIEW_PAYLOAD] = $entity[Target_Cloudsearch::VIEW_PAYLOAD]->to_array();
         $fields = array();
         $fields['entity'] = $entity_name;

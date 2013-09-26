@@ -75,7 +75,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     $field_definitions[$field_name] = $field_definition;
                 }
                 
-                foreach(array('key', Target_Cloudsearch::VIEW_INDEXER) as $view_name)
+                foreach(array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view_name)
                 {
                     $this->build_polymorphic_domain_helper($entity[$view_name], $entity_name_cleaned, $field_definitions, $text_sources);
                 }

@@ -257,7 +257,7 @@ echo $raw;die;
     public function targetize(Entity_Row $entity) 
     { 
         $entity_name = $entity->get_root()->get_name();
-        $timestamp = $entity['timestamp']->to_array();
+        $timestamp = $entit->to_array();
         if(is_array($timestamp) && array_key_exists(0, $timestamp))
         {
             $timestamp = $timestamp[0];
@@ -267,8 +267,8 @@ echo $raw;die;
             $timestamp = time();
         }
         $payload = array();
-        $payload['key'] = $entity['key']->to_array();
-        $payload['timestamp'] = $entity['timestamp']->to_array();
+        $payload[Entity_Root::VIEW_KEY] = $entity[Entity_Root::VIEW_KEY]->to_array();
+        $payloa = $entit->to_array();
         $payload[Target_Cloudsearch::VIEW_PAYLOAD] = $entity[Target_Cloudsearch::VIEW_PAYLOAD]->to_array();
         $fields = array();
         $fields['entity'] = $entity_name;
@@ -299,7 +299,7 @@ echo $raw;die;
         }
 
         $id_values = array();
-        foreach($entity['key']->to_array() as $alias => $value)
+        foreach($entity[Entity_Root::VIEW_KEY]->to_array() as $alias => $value)
         {
             $id_values[] = $value;
         }
@@ -751,7 +751,7 @@ echo $raw;die;
         {
             $config_in = Kohana::$config->load('cloudsearch')->as_array();
             $config = array(
-                'key' => $config_in['key'],
+                Entity_Root::VIEW_KEY => $config_in[Entity_Root::VIEW_KEY],
                 'secret' => $config_in['secret'],
                 'default_cache_config' => $config_in['default_cache_config'],
                 'certificate_authority' => $config_in['certificate_authority'],

@@ -8,13 +8,13 @@ implements Target_Cloudsearchable
     {
         parent::__construct('example');    
         
-        $this['key'] = new Entity_Columnset('key');
-        $this['key']['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
-        $this['key']->set_attribute(Entity_Root::REQUIRED, 'primary_id');
+        $this[Entity_Root::VIEW_KEY] = new Entity_Columnset(Entity_Root::VIEW_KEY);
+        $this[Entity_Root::VIEW_KEY]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
+        $this[Entity_Root::VIEW_KEY]->set_attribute(Entity_Root::REQUIRED, 'primary_id');
 
-        $this['timestamp'] = new Entity_Columnset('timestamp');
-        $this['timestamp']['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
-        $this['timestamp']->set_attribute(Entity_Root::REQUIRED, 'modified_at');
+        $thi = new Entity_Columnset('timestamp');
+        $thi['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
+        $thi->set_attribute(Entity_Root::REQUIRED, 'modified_at');
 
         $this['api'] = new Entity_Columnset('api');
         $this['api']['name'] = new Entity_Column('name', Type::factory('string'));
@@ -86,9 +86,9 @@ class CloudsearchTest extends Unittest_TestCase
         $target = new Target_Cloudsearch();        
         $entity = Entity_Example::factory();
 
-        $entity['key']['primary_id'] = 'f59dfde3-3919-4b58-c200-0cb83fd4ff54';
+        $entity[Entity_Root::VIEW_KEY]['primary_id'] = 'f59dfde3-3919-4b58-c200-0cb83fd4ff54';
 
-        $entity['timestamp']['modified_at'] = '1357147485';
+        $entit['modified_at'] = '1357147485';
         $entity['api']['name'] = 'An Entity';
 
         $entity['api']['related']['related_id'] = 'd3db3422-c7a4-4a73-c8f4-e5940c02c2c1';
@@ -114,7 +114,7 @@ class CloudsearchTest extends Unittest_TestCase
         $this->assertEquals("example", $fields['entity']);
         $this->assertInternalType('string', $fields['payload']);
 
-        $this->assertEquals($entity['key']['primary_id'], $fields['example__x__primary_id']);
+        $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $fields['example__x__primary_id']);
         $this->assertEquals($entity['api']['name'], $fields['example__x__name']);
         $this->assertEquals($entity['api']['related']['related_id'],
                             $fields['example__x__related_id']);
@@ -171,9 +171,9 @@ class CloudsearchTest extends Unittest_TestCase
 
         $entity2 = $target->columnize(Entity_Example::factory(), $mangled);
         
-        $this->assertEquals($entity['key']['primary_id'], $entity2['key']['primary_id']);
-        $this->assertEquals($entity['timestamp']['modified_at'],
-                            $entity2['timestamp']['modified_at']);
+        $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $entity2[Entity_Root::VIEW_KEY]['primary_id']);
+        $this->assertEquals($entit['modified_at'],
+                            $entity['modified_at']);
         $this->assertEquals($entity['api']['name'], $entity2['api']['name']);
         $this->assertEquals($entity['api']['related']['related_id'],
                             $entity2['api']['related']['related_id']);

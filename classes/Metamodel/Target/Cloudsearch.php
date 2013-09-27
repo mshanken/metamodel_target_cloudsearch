@@ -348,7 +348,7 @@ implements Target_Selectable
                     }
                 }
             }
-            $field_name = $entity_name . '__x__' . $this->clean_field_name($alias);
+            $field_name = $entity_name . Target_Cloudsearch::DELIMITER . $this->clean_field_name($alias);
             if(!array_key_exists($field_name, $fields))
             {
                 $fields[$field_name] = $value;

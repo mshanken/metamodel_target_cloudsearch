@@ -114,43 +114,43 @@ class CloudsearchTest extends Unittest_TestCase
         $this->assertEquals("example", $fields['entity']);
         $this->assertInternalType('string', $fields['payload']);
 
-        $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $fields['example__x__primary_id']);
-        $this->assertEquals($entity['api']['name'], $fields['example__x__name']);
+        $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $fields['example' . Target_Cloudsearch::DELIMITER . 'primary_id']);
+        $this->assertEquals($entity['api']['name'], $fields['example' . Target_Cloudsearch::DELIMITER . 'name']);
         $this->assertEquals($entity['api']['related']['related_id'],
-                            $fields['example__x__related_id']);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'related_id']);
         $this->assertEquals($entity['api']['related']['related_name'],
-                            $fields['example__x__related_name']);
-        $this->assertInternalType('string', $fields['example__x__related_facetable']);
-        $related_fields = Parse::json_parse($fields['example__x__related_facetable'], true);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'related_name']);
+        $this->assertInternalType('string', $fields['example' . Target_Cloudsearch::DELIMITER . 'related_facetable']);
+        $related_fields = Parse::json_parse($fields['example' . Target_Cloudsearch::DELIMITER . 'related_facetable'], true);
         $this->assertEquals($entity['api']['related']['related_id'], $related_fields['related_id']);
         $this->assertEquals($entity['api']['related']['related_name'],
                             $related_fields['related_name']);
         
-        $this->assertInternalType('array', $fields['example__x__multiple_id']);
-        $this->assertEquals(2, count($fields['example__x__multiple_id']));
+        $this->assertInternalType('array', $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_id']);
+        $this->assertEquals(2, count($fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_id']));
         $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
-                            $fields['example__x__multiple_id'][0]);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_id'][0]);
         $this->assertEquals($entity['api']['multiple'][1]['multiple_id'],
-                            $fields['example__x__multiple_id'][1]);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_id'][1]);
         
-        $this->assertInternalType('array', $fields['example__x__multiple_name']);
-        $this->assertEquals(2, count($fields['example__x__multiple_name']));
+        $this->assertInternalType('array', $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_name']);
+        $this->assertEquals(2, count($fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_name']));
         $this->assertEquals($entity['api']['multiple'][0]['multiple_name'],
-                            $fields['example__x__multiple_name'][0]);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_name'][0]);
         $this->assertEquals($entity['api']['multiple'][1]['multiple_name'],
-                            $fields['example__x__multiple_name'][1]);
+                            $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_name'][1]);
         
-        $this->assertInternalType('array', $fields['example__x__multiple_facetable']);
+        $this->assertInternalType('array', $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable']);
 
-        $this->assertEquals(2, count($fields['example__x__multiple_facetable']));
-        $this->assertInternalType('string', $fields['example__x__multiple_facetable'][0]);
-        $multiple_fields_0 = Parse::json_parse($fields['example__x__multiple_facetable'][0], true);
+        $this->assertEquals(2, count($fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable']));
+        $this->assertInternalType('string', $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable'][0]);
+        $multiple_fields_0 = Parse::json_parse($fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable'][0], true);
         $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
                             $multiple_fields_0['multiple_id']);
         $this->assertEquals($entity['api']['multiple'][0]['multiple_name'],
                             $multiple_fields_0['multiple_name']);
-        $this->assertInternalType('string', $fields['example__x__multiple_facetable'][1]);
-        $multiple_fields_1 = Parse::json_parse($fields['example__x__multiple_facetable'][1], true);
+        $this->assertInternalType('string', $fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable'][1]);
+        $multiple_fields_1 = Parse::json_parse($fields['example' . Target_Cloudsearch::DELIMITER . 'multiple_facetable'][1], true);
         $this->assertEquals($entity['api']['multiple'][1]['multiple_id'],
                             $multiple_fields_1['multiple_id']);
         $this->assertEquals($entity['api']['multiple'][1]['multiple_name'],

@@ -17,8 +17,8 @@ implements Target_Selectable
     const DELIMITER = '__x__';
     const UNIVERSAL_SEARCH_FIELD = 'text';
 
-    const ATTR_FREETEXT = 'freetext_type';
-    const ATTR_FACETABLE = 'is_facet';
+    const ATTR_FREETEXT = 'do_search';
+    const ATTR_FACET = 'do_facet';
 
     /**
      * URL of AWS cloudsearch API
@@ -85,7 +85,7 @@ implements Target_Selectable
         $tmp = array();
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
         {
-            if (!$entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACETABLE, $k)) continue;
+            if (!$entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k)) continue;
             if (!array_key_exists($k, $facet_constraints))
             {
                 $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);

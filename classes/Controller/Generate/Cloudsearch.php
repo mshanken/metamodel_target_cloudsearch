@@ -201,7 +201,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         return array(
             'type' => ($parent->get_attribute(Target_Cloudsearch::ATTR_FREETEXT, $alias))? 'text' : 'literal',
             'search_enabled' => true,
-            'facet_enabled' => $parent->get_attribute(Target_Cloudsearch::ATTR_FACETABLE, $alias),
+            'facet_enabled' => $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias),
             'result_enabled' => $parent->get_attribute(Selector::SORTABLE, $alias),
         );
     }

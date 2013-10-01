@@ -52,7 +52,6 @@ extends Target_Info
     public function validate(Entity_Root $root)
     {
         if(!($root[Target_Cloudsearch::VIEW_PAYLOAD] instanceof Entity_Columnset)) return false;
-        if(!($root[Target_Cloudsearch::VIEW_FACETS] instanceof Entity_Columnset)) return false;
         if(!($root[Target_Cloudsearch::VIEW_INDEXER] instanceof Entity_Columnset)) return false;
         
         return true;

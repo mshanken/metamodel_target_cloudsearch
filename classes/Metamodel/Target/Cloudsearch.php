@@ -505,14 +505,7 @@ implements Target_Selectable
      * as defined by constants in the Selector class.
      */
     public function visit_selector_security(Type_Typeable $type, $sortable) {
-        if($type instanceof Type_FreeText)
-        {
-            $result = array(
-                Selector::SEARCH,
-                Selector::ISNULL,
-            );
-        } 
-        else if ($type instanceof Type_Number)
+        if ($type instanceof Type_Number)
         {
             $result = array(
                 Selector::EXACT,
@@ -535,6 +528,7 @@ implements Target_Selectable
         {
             $result = array(
                 Selector::SEARCH,
+                // @TODO if FREETEXT, dont allow  Exact
                 Selector::EXACT,
                 Selector::ISNULL,
             );

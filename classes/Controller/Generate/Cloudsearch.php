@@ -27,14 +27,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             }
         }
         
-        $domain['index_fields']['payload'] = array(
+        $domain['index_fields'][Target_Cloudsearch::FIELD_PAYLOAD] = array(
             'type' => 'literal',
             'search_enabled' => FALSE,
             'facet_enabled' => FALSE,
             'result_enabled' => TRUE
         );
         
-        $domain['index_fields']['entity'] = array(
+        $domain['index_fields'][Target_Cloudsearch::FIELD_ENTITY] = array(
             'type' => 'literal',
             'search_enabled' => TRUE,
             'facet_enabled' => FALSE,

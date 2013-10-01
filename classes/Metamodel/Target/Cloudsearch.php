@@ -20,6 +20,9 @@ implements Target_Selectable
     const ATTR_FREETEXT = 'do_search';
     const ATTR_FACET = 'do_facet';
 
+    const FIELD_PAYLOAD = 'cst_payload';
+    const FIELD_ENTITY = 'cst_entity';
+
     /**
      * URL of AWS cloudsearch API
      *
@@ -57,7 +60,7 @@ implements Target_Selectable
             $query_parameters['bq'] = sprintf("(and %s %s)", $field_query, $base_query);
         }
 
-        $query_parameters['return-fields'] = 'payload';
+        $query_parameters['return-fields'] = Target_Cloudsearch::FIELD_PAYLOAD;
 
         if ($rank = $selector->build_target_sort($entity, $this))
         {
@@ -334,10 +337,9 @@ implements Target_Selectable
     public function targetize(Entity_Row $entity) 
     { 
         $entity_name = $entity->get_root()->get_name();
-
-        $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), $fields);
-        $fields['entity'] = $entity_name;
-        $fields['payload'] = json_encode(array(
+        $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), array());
+        $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
+        $fields[Target_Cloudsearch::FIELD_PAYLOAD] = json_encode(array(
             Entity_Root::VIEW_KEY => $entity[Entity_Root::VIEW_KEY]->to_array(),
             Entity_Root::VIEW_TS => $entity[Entity_Root::VIEW_TS]->to_array(),
             Target_Cloudsearch::VIEW_PAYLOAD => $entity[Target_Cloudsearch::VIEW_PAYLOAD]->to_array(),
@@ -349,7 +351,7 @@ implements Target_Selectable
 
     public function columnize(Entity_Row $entity, array $document) 
     {
-        if (!($payload = array_shift($document['payload'])))
+        if (!($payload = array_shift($document[Target_Cloudsearch::FIELD_PAYLOAD])))
         {
             throw('invalid cloudsearch response ... '. var_export($document, true));
         }
@@ -361,7 +363,7 @@ implements Target_Selectable
             $result[$k] = $v;
         }
             
-        if (count($document['payload']))
+        if (count($document[Target_Cloudsearch::FIELD_PAYLOAD]))
         {
             // @TODO do something if extra payloads exist...
         }

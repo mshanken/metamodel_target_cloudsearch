@@ -345,28 +345,7 @@ implements Target_Selectable
         
         return $fields;
     }
-    
-    protected function get_override($entity_name)
-    {
-        static $override = null;
-
-        if (is_null($override))
-        {
-            $override = false;
-            $override_class_name = 'Entity_Override_' . implode('_', array_map('ucwords', explode('_', $entity_name)));
-            if(class_exists($override_class_name))
-            {
-                $override_class = new $override_class_name();
-                if($override_class instanceof Entity_Override_Cloudsearch)
-                {
-                    $override = array($override_class, 'cloudsearch_indexer_override');
-                }
-            }
-        }
-        return $override;
-    }
-    
-    
+       
 
     public function columnize(Entity_Row $entity, array $document) 
     {

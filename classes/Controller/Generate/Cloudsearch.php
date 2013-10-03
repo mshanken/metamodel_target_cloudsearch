@@ -49,12 +49,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      */
     protected function build_entity_domain(Entity_Row $entity) 
     {
+        $cs = new Target_Cloudsearch();
         $field_definitions = array();
         $entity_name = $this->clean_field_name($entity->get_root()->get_name());
         
         foreach (array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view)
         {
-            $field_definitions = $this->do_indexer_fields($entity[$view], array($entity_name), $field_definitions);
+            // $field_definitions = $this->do_indexer_fields($entity[$view], array($entity_name), $field_definitions);
+            $field_definitions = $cs->targetize_fields($entity[$view], array($entity_name), $field_definitions, array($this,'type_transform'));
         }
 
         // general search field
@@ -108,7 +110,6 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      *
      *
      * @see type_transform()
-     */
     protected function do_indexer_fields(Entity_Base $part, array $entity_name, array $fields)
     {
         $structure = $part;
@@ -162,6 +163,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
         return $fields;
     }
+     */
 
     /**
      * field definition based on type and attributes
@@ -170,7 +172,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      * so we require that all three are passed in.
      *
      */
-    protected function type_transform(Entity_Base $parent, $type, $alias)
+    public function type_transform(Entity_Base $parent, $type, $alias, $value)
     {
         // Pivot children
         if ($type instanceof Entity_Columnset_Join)

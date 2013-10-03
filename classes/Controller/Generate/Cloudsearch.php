@@ -87,86 +87,11 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         return $field_definitions;
     }
 
-    /**
-     * generate field definitions based on type.
-     *
-     * All fields must be flat in cloudsearch, and all values are arrays
-     *
-     * 1. Type_Typeable are run thru type_transform()
-     *      eg: foo = Type_String
-     *          becomes
-     *          $fields[entity__x__foo] = array(),
-     *
-     * 2. Entity_Columnset are recursively split into individual fields, prefixed with my alias
-     *      eg: foo = array('color' => Type_String, 'count' => Type_Int) 
-     *          becomes
-     *          $fields[entity_foo__x__color] = array(), $fields[entity_foo__x__count] = array();
-     *
-     * 3. Entity_Array_Simple is converted to case #1 with it's type = to it's childs type
-     *
-     * 4. Entity_Array_Pivot is converted to case #1 with it's type = get_child() or Type_String in the case of a JOIN
-     *
-     * 5. Entity_Array_Nested is converted to case #2
-     *
-     *
-     * @see type_transform()
-    protected function do_indexer_fields(Entity_Base $part, array $entity_name, array $fields)
-    {
-        $structure = $part;
-        if ($part instanceof Entity_Base)
-        {
-            $structure = $part->get_children();
-        }
-
-        foreach ($structure as $alias => $value)
-        {
-            if ($value instanceof Type_Typeable)
-            {
-                $field_name = sprintf('%s%s%s'
-                    , implode('_', $entity_name)
-                    , Target_Cloudsearch::DELIMITER
-                    , $this->clean_field_name($alias)
-                );
-                $fields[$field_name] = $this->type_transform($part, $value, $alias);
-            }
-            else if ($value instanceof Entity_Columnset)
-            {
-                $entity_path = $entity_name;
-                $entity_path[] = $alias;
-                $fields = $this->do_indexer_fields($part, $entity_path, $fields);
-            }
-            else if ($value instanceof Entity_Array_Simple)
-            {
-                $field_name = sprintf('%s%s%s'
-                    , implode('_', $entity_name)
-                    , Target_Cloudsearch::DELIMITER
-                    , $this->clean_field_name($alias)
-                );
-                $fields[$field_name] = $this->type_transform($value, $value->get_child(), $alias);
-            }
-            else if ($value instanceof Entity_Array_Pivot)
-            {
-                $field_name = sprintf('%s%s%s'
-                    , implode('_', $entity_name)
-                    , Target_Cloudsearch::DELIMITER
-                    , $this->clean_field_name($alias)
-                );
-                $fields[$field_name] = $this->type_transform($value, $value->get_child(), $alias);
-            }
-            else if ($value instanceof Entity_Array_Nested)
-            {
-                $entity_path = $entity_name;
-                $entity_path[] = $alias;
- //               $fields = $this->targetize_fields($part->get_child(), $entity_path, $fields);
-            }
-        }
-
-        return $fields;
-    }
-     */
 
     /**
-     * field definition based on type and attributes
+     * field definition based on type and attributes 
+     *
+     * callback for Target_Cloudsearch::targetize_fields
      *
      * NOTE: normally $parent[$alias] = $type however array_pivots cannot be routed this way,
      * so we require that all three are passed in.

@@ -15,13 +15,13 @@ implements Target_Selectable
     const VIEW_INDEXER = 'cloudsearch_indexer';
 
     const DELIMITER = '__x__';
-    const UNIVERSAL_SEARCH_FIELD = 'text';
 
     const ATTR_FREETEXT = 'do_search';
     const ATTR_FACET = 'do_facet';
 
     const FIELD_PAYLOAD = 'cst_payload';
     const FIELD_ENTITY = 'cst_entity';
+    const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
 
     /**
      * URL of AWS cloudsearch API
@@ -184,21 +184,8 @@ implements Target_Selectable
      */
     public function create(Entity_Row $entity) 
     { 
-        $unique_key = array($entity_name);
-        foreach($entity[Entity_Root::VIEW_KEY]->to_array() as $alias => $value)
-        {
-            $unique_key[] = $value;
-        }
-            
-        $document_add = array();
-        $document_add['type'] = 'add';
-        $document_add['lang'] = 'en';
-        $document_add['id'] = $this->clean_field_name($unique_key);
-        $document_add['version'] = implode('_', $entity[Entity_Root::VIEW_TS]->to_array());
-        $document_add['fields'] = $this->targetize($entity);
-
         $cloudsearch_endpoint = $this->get_document_endpoint();
-        $clob = '[' . json_encode($document_add) . ']';
+        $clob = '[' . $this->create_document($entity) . ']';
         $curl = curl_init($cloudsearch_endpoint);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
         curl_setopt($curl, CURLOPT_POST, true);
@@ -212,7 +199,29 @@ implements Target_Selectable
 
         // @TODO no return ?  what does throttled do ?
     }
-       
+ 
+    /**
+     * this wraps a target in the document stanzas cs expects when we do a post
+     *
+     */
+    public function create_document($entity)
+    {
+        $unique_key = array($entity->get_root()->get_name());
+        foreach($entity[Entity_Root::VIEW_KEY]->to_array() as $alias => $value)
+        {
+            $unique_key[] = $value;
+        }
+         
+        $document_add = array();
+        $document_add['type'] = 'add';
+        $document_add['lang'] = 'en';
+        $document_add['id'] = $this->clean_field_name(implode('_', $unique_key));
+        $document_add['version'] = (int)implode('', $entity[Entity_Root::VIEW_TS]->to_array());
+        $document_add['fields'] = $this->targetize($entity);
+        
+        return json_encode($document_add);
+    }
+
     /**
      * implements selectable
      * 
@@ -280,53 +289,83 @@ implements Target_Selectable
      *
      * @see type_transform()
      */
-    protected function targetize_fields(Entity_Part $part, array $entity_name, array $fields)
+    public function targetize_fields(Entity_Base $parent, array $entity_name, array $fields, $format_function = null)
+    // @TODO this typehint is only available in 5.4
+    //protected function targetize_fields(Entity_Base $parent, array $entity_name, array $fields, callable $format_function=)
     {
-        $structure = $part->get_children();
-        foreach ($part->to_array() as $alias => $value)
+        if (is_null($format_function)) $format_function = array($this, 'type_transform_translate');
+        $structure = $parent->get_children();
+        $value = $parent->to_array();
+
+        foreach ($structure as $alias => $type)
         {
-            if ($structure[$alias] instanceof Type_Typeable)
+            $entity = array_shift($entity_name);
+            $entity_name[] = $this->clean_field_name($alias);
+            $field_name = sprintf('%s%s%s'
+                , $entity
+                , Target_Cloudsearch::DELIMITER
+                , implode('_', $entity_name)
+            );
+            array_unshift($entity_name, $entity);
+            array_pop($entity_name);
+
+            if ($type instanceof Type_Typeable)
             {
-                $field_name = sprintf('%s%s%s'
-                    , implode('_', $entity_name)
-                    , Target_Cloudsearch::DELIMITER
-                    , $this->clean_field_name($alias)
-                );
-                // @TODO type_transform has painful args... i have the type right here!
-                $fields[$field_name] = $this->type_transform($structure[$alias], $value);
+                $fields[$field_name] = call_user_func_array($format_function, array(
+                    $parent,
+                    $type,
+                    $alias,
+                    $value[$alias],
+                    $fields,
+                    $field_name,
+                ));
             }
         
-            else if ($structure[$alias] instanceof Entity_Columnset)
+            else if ($type instanceof Entity_Columnset)
             {
                 $entity_path = $entity_name;
                 $entity_path[] = $alias;
-                $fields = $this->targetize_fields($part, $entity_path, $fields);
+                $fields = $this->targetize_fields($type, $entity_path, $fields, $format_function);
             
             }
-            else if ($structure[$alias] instanceof Entity_Array_Simple)
-            {
-                $fields = $this->targetize_fields(array($alias => $part->get_child()), $entity_name, $fields);
-            }
-            else if ($structure[$alias] instanceof Entity_Array_Pivot)
-            {
-                $field_name = sprintf('%s%s%s'
-                    , implode('_', $entity_name)
-                    , Target_Cloudsearch::DELIMITER
-                    , $this->clean_field_name($alias)
-                );
-                // @TODO type_transform has painful args... i have the type right here!
-                $fields[$field_name] = $this->type_transform($part->get_child(), $value);
 
+            else if ($type instanceof Entity_Array_Pivot || $type instanceof Entity_Array_Simple)
+            {
+                $fields[$field_name] = call_user_func_array($format_function, array(
+                    $type,
+                    $type->get_child(),
+                    $alias,
+                    $value[$alias],
+                    $fields,
+                    $field_name,
+                ));
             }
-            else if ($structure[$alias] instanceof Entity_Array_Nested)
+            else if ($type instanceof Entity_Array_Nested)
             {
                 $entity_path = $entity_name;
                 $entity_path[] = $alias;
-                $fields = $this->targetize_fields($part->get_child(), $entity_path, $fields);
+                foreach ($type as $k => $v)
+                {
+                    $fields = $this->targetize_fields($type->get_child(), $entity_path, $fields, $format_function);
+                }
             }
         }   
 
         return $fields;
+    }
+
+    protected function type_transform_translate($parent_obj, $child_obj, $child_alias, $child_value, $fields, $field_name)
+    {
+        if (!array_key_exists($field_name, $fields)) $fields[$field_name] = array();
+        
+        $transform = $this->type_transform($child_obj, $child_value);
+        if (is_array($transform))
+        {
+            $fields[$field_name] = array_merge($fields[$field_name], $transform);
+        } else {
+            $fields[$field_name][] = $transform;
+        }
+        return $fields[$field_name];
     }
     
     /**
@@ -337,7 +376,9 @@ implements Target_Selectable
     public function targetize(Entity_Row $entity) 
     { 
         $entity_name = $entity->get_root()->get_name();
-        $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), array());
+        $fields = array();
+        $fields = $this->targetize_fields($entity[Entity_Root::VIEW_KEY], array($entity_name), $fields);
+        $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), $fields);
         $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
         $fields[Target_Cloudsearch::FIELD_PAYLOAD] = json_encode(array(
             Entity_Root::VIEW_KEY => $entity[Entity_Root::VIEW_KEY]->to_array(),
@@ -472,13 +513,14 @@ implements Target_Selectable
                 else if ($date = DateTime::createFromFormat('Y-m-d', $value)) {}
                 else
                 {
+                    debug_print_backtrace();
                     throw new HTTP_Exception_400(sprintf('Invalid Date Format %s', $value));
                 }
                 return $date->format('U');
             }
         }
 
-        return $param;
+        return $value;
     }
     
     /**
@@ -796,19 +838,4 @@ implements Target_Selectable
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
-    /*
-    removed because confusing
-    public function lookup_entanglement_name($entity, $entanglement_name)
-    {
-            $result = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($entanglement_name);
-            if(!is_null($result))
-            {
-                return $result;
-            }
-
-        // throw new Exception('Cannot Find '. $entanglement_name);
-        return $entanglement_name;
-    }
-    */
- 
 }

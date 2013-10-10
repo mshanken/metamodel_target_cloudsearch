@@ -66,17 +66,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             , Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD
         );
 
-        $field_definitions[$text_field_name] = array(
-            'type' => 'text',
-            'facet_enabled' => FALSE,
-            'result_enabled' => FALSE,
-            'sources' => array(),
-        );
- 
         foreach ($field_definitions as $k => $v)
         {
             if ('text' == $v['type'])
             {
+                if (!array_key_exists($text_field_name, $field_definitions))
+                {
+                    $field_definitions[$text_field_name] = array(
+                        'type' => 'text',
+                        'facet_enabled' => FALSE,
+                        'result_enabled' => FALSE,
+                        'sources' => array(),
+                    );
+                }
                 $field_definitions[$text_field_name]['sources'][] = array(
                     'source_name' => $k,
                     'type' => 'copy',
@@ -97,8 +99,9 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      * so we require that all three are passed in.
      *
      */
-    public function type_transform(Entity_Base $parent, $type, $alias, $value)
+    public function type_transform(Entity_Base $parent, $type, $alias, $value, $fields, $field_name)
     {
+
         // Pivot children
         if ($type instanceof Entity_Columnset_Join)
         {
@@ -110,7 +113,8 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                     'facet_enabled' => false,
                     'result_enabled' => false,   
                 );
-            } 
+            }
+            $parent = $type;
             $tmp = $type->get_children();
             $type = array_shift($tmp);
         }

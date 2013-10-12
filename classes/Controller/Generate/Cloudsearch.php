@@ -2,6 +2,97 @@
 
 class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 {
+
+    protected function copy_sources($field, $sources)
+    {
+        if (!empty($sources))
+        {
+            $field['SourceAttributes'] = array();
+            foreach ($sources as $s)
+            {
+                $field['SourceAttributes'][] = array (
+                    'SourceDataFunction' => 'Copy',
+                    'SourceDataCopy' => array (
+                        'SourceName' => $s,
+                    ),
+                );
+            }
+        }
+        return $field;
+    }
+
+    /**
+     * literal—a literal field contains an identifier or other data that you want to be able to match exactly.
+     *
+     * The value of a literal field can be returned in search results or the field can be used as a facet, but not both. 
+     * By default, literal fields are not search-enabled, result-enabled, or facet-enabled. 
+     *
+     * if both facet is required we use a non-stemming text field
+     */
+    protected function literal_field($name, $facet = false, $result = false, $default = null) 
+    {
+        if ($facet)
+        {
+            return $this->text_field($name, $facet, $result, false, $default);
+        }
+
+        $tmp = array (
+            'IndexFieldName' => $name,
+            'IndexFieldType' => 'literal',
+            'LiteralOptions' => array (
+                'SearchEnabled' => !$facet,
+                'FacetEnabled'  => $facet,
+                'ResultEnabled' => $result,
+            ),
+        );
+        if (!is_null($default)) $tmp['LiteralOptions']['DefaultValue'] = $default;
+
+        return $tmp;
+    }
+
+    /**
+     * text—a text field contains arbitrary alphanumeric data. A text field is always searchable. 
+     *
+     * The value of a text field can either be returned in search results or the field can be used as a facet. 
+     * By default, text fields are neither result-enabled or facet-enabled.
+     */
+    protected function text_field($name, $facet = false, $result = false, $stemming = true, $default = null) 
+    {
+        $tmp = array (
+            'IndexFieldName' => $name,
+            'IndexFieldType' => 'text',
+            'TextOptions' => array (
+                'FacetEnabled'  => $facet,
+                'ResultEnabled' => $result,
+            ),
+        );
+        
+        if (!$stemming) $tmp['TextOptions']['TextProcessor'] = 'cs_text_no_stemming';
+        if (!is_null($default)) $tmp['TextOptions']['DefaultValue'] = $default;
+        return $tmp;
+    }
+
+    /**
+     * uint—a uint field contains an unsigned integer value. 
+     *
+     * Uint fields are always searchable, the value of a uint field can always be returned in results, and faceting is always enabled. 
+     * Uint fields can also be used in rank expressions.
+     */
+    protected function uint_field($name, $default = null)
+    {
+        $tmp = array (
+            'IndexFieldName' => $name,
+            'IndexFieldType' => 'literal',
+            'UIntOptions' => array (),
+        );
+
+        if (!is_null($default)) $tmp['LiteralOptions']['DefaultValue'] = $default;
+        return $tmp;
+    }
+
+
+
+
     /**
      * Generate json domain definition for cloudsearch from all entities
      * 
@@ -11,8 +102,9 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
     {
         $files = $this->getImportantFiles( Kohana::list_files('classes/Entity'));
         $entities = array_keys($this->class_methods($files));
+        $domain_name = $this->request->param('domain');
         $domain = array(
-            'index_fields' => array(),
+            $domain_name => array(),
         );
 
         foreach($entities as $entity_class_name) 
@@ -22,24 +114,13 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 $entity = $entity_class_name::factory();
                 if ($entity->get_root() instanceof Target_Cloudsearchable)
                 {
-                    $domain['index_fields'] = array_merge($domain['index_fields'], $this->build_entity_domain($entity));
+                    $domain[$domain_name] = array_merge($domain[$domain_name], $this->build_entity_domain($entity));
                 }
             }
         }
         
-        $domain['index_fields'][Target_Cloudsearch::FIELD_PAYLOAD] = array(
-            'type' => 'literal',
-            'search_enabled' => FALSE,
-            'facet_enabled' => FALSE,
-            'result_enabled' => TRUE
-        );
-        
-        $domain['index_fields'][Target_Cloudsearch::FIELD_ENTITY] = array(
-            'type' => 'literal',
-            'search_enabled' => TRUE,
-            'facet_enabled' => FALSE,
-            'result_enabled' => FALSE
-        );
+        $domain[$domain_name][Target_Cloudsearch::FIELD_PAYLOAD] = $this->literal_field(Target_Cloudsearch::FIELD_PAYLOAD, false, false);
+        $domain[$domain_name][Target_Cloudsearch::FIELD_ENTITY] = $this->literal_field(Target_Cloudsearch::FIELD_ENTITY, false, false);
         
         $this->response->body(json_encode($domain));
     }
@@ -55,36 +136,25 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         
         foreach (array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view)
         {
-            // $field_definitions = $this->do_indexer_fields($entity[$view], array($entity_name), $field_definitions);
             $field_definitions = $cs->targetize_fields($entity[$view], array($entity_name), $field_definitions, array($this,'type_transform'));
         }
 
         // general search field
-        $text_field_name = sprintf('%s%s%s'
+        $universal_field = sprintf('%s%s%s'
             , $entity_name
             , Target_Cloudsearch::DELIMITER
             , Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD
         );
 
+        $copy = array();
         foreach ($field_definitions as $k => $v)
         {
-            if ('text' == $v['type'])
+            if ($v['IndexFieldType'] == 'text')
             {
-                if (!array_key_exists($text_field_name, $field_definitions))
-                {
-                    $field_definitions[$text_field_name] = array(
-                        'type' => 'text',
-                        'facet_enabled' => FALSE,
-                        'result_enabled' => FALSE,
-                        'sources' => array(),
-                    );
-                }
-                $field_definitions[$text_field_name]['sources'][] = array(
-                    'source_name' => $k,
-                    'type' => 'copy',
-                );
+                $copy[] = $v['IndexFieldName'];
             }
         }
+        $field_definitions[$universal_field] = $this->copy_sources($this->text_field($universal_field, false, false), $copy);
 
         return $field_definitions;
     }
@@ -107,12 +177,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         {
             if (count($type) > 1) 
             {
-                return array(
-                    'type' => 'literal',
-                    'search_enabled' => true,
-                    'facet_enabled' => false,
-                    'result_enabled' => false,   
-                );
+                return $this->literal_field($field_name, false, false);
             }
             $parent = $type;
             $tmp = $type->get_children();
@@ -121,19 +186,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
         if ($type instanceof Type_Date || $type instanceof Type_Number)
         {  
-            return array(
-                'type' => 'uint',
-                'search_enabled' => true,
-                'facet_enabled' => true,
-                'result_enabled' => true,   
+            return $this->uint_field($field_name);
+        }
+    
+        if ($parent->get_attribute(Target_Cloudsearch::ATTR_FREETEXT, $alias))
+        {
+            return $this->text_field($field_name
+                , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+                , $parent->get_attribute(Selector::SORTABLE, $alias)
             );
         }
-
-        return array(
-            'type' => ($parent->get_attribute(Target_Cloudsearch::ATTR_FREETEXT, $alias))? 'text' : 'literal',
-            'search_enabled' => true,
-            'facet_enabled' => $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias),
-            'result_enabled' => $parent->get_attribute(Selector::SORTABLE, $alias),
+        return $this->literal_field($field_name
+            , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+            , $parent->get_attribute(Selector::SORTABLE, $alias)
         );
     }
 

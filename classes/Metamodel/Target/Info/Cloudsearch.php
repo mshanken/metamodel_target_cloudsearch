@@ -20,7 +20,7 @@ extends Target_Info
 {
     private $entity_name = NULL;
     private $field_types = array();
-    private $facet_constraints = array();
+    private $facet_maps = array();
     
     public function __construct() 
     {
@@ -36,16 +36,20 @@ extends Target_Info
                && ($this->field_types[$field_name] == 'numeric');
     }
     
-
-    // handle bracket facets
-    public function get_facet_constraints()
+    public function set_facet_mapping($field,array $map, $default = null)
     {
-        return $this->facet_constraints;
+        $this->facet_maps[$field] = array(
+            'cases' => $map,
+            'default' => $default,
+        );
     }
 
-    public function set_facet_constraints($field, array $constraints)
+    public function get_facet_mapping($field)
     {
-        $this->facet_constraints[$field] = $constraints;
+        if (array_key_exists($field, $this->facet_maps))
+            return $this->facet_maps[$field];
+
+        return false;
     }
 
     // @TODO

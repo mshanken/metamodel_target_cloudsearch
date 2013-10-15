@@ -286,10 +286,10 @@ implements Target_Selectable
      *
      * 5. Entity_Array_Nested is converted to case #2
      *
-     *
+     * 
      * @see type_transform()
      */
-    public function targetize_fields(Entity_Base $parent, array $entity_name, array $fields, $format_function = null)
+    public function targetize_fields(Entity_Base $parent, array $entity_name, array $fields = array(), $format_function = null)
     // @TODO this typehint is only available in 5.4
     //protected function targetize_fields(Entity_Base $parent, array $entity_name, array $fields, callable $format_function=)
     {
@@ -311,7 +311,7 @@ implements Target_Selectable
 
             if ($type instanceof Type_Typeable)
             {
-                $fields[$field_name] = call_user_func_array($format_function, array(
+                $fields += call_user_func_array($format_function, array(
                     $parent,
                     $type,
                     $alias,
@@ -331,7 +331,7 @@ implements Target_Selectable
 
             else if ($type instanceof Entity_Array_Pivot || $type instanceof Entity_Array_Simple)
             {
-                $fields[$field_name] = call_user_func_array($format_function, array(
+                $fields += call_user_func_array($format_function, array(
                     $type,
                     $type->get_child(),
                     $alias,
@@ -365,7 +365,7 @@ implements Target_Selectable
         } else {
             $fields[$field_name][] = $transform;
         }
-        return $fields[$field_name];
+        return array($field_name => $fields[$field_name]);
     }
     
     /**

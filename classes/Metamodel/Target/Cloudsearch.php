@@ -1,5 +1,9 @@
 <?php //defined('SYSPATH') or die('No direct access allowed.');
 
+use Aws\Common\Aws;
+use Aws\CloudSearch;
+
+
 /**
  * target/cloudsearch.php
  * 
@@ -771,52 +775,60 @@ implements Target_Selectable
     {
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
-        
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
+        $memcache_key = sprintf('cloudsearch_endpoints_%s',$csdomain);
         
-        $search_endpoint = $memcache->get('cloudsearch_search_endpoint'.$csdomain);
-        $document_endpoint = $memcache->get('cloudsearch_document_endpoint'.$csdomain);
-        
-        if($search_endpoint && $document_endpoint)
+        if (!$this->search_endpoint || !$this->document_endpoint)
         {
-            $this->search_endpoint = $search_endpoint;
-            $this->document_endpoint = $document_endpoint;
-        }
-        else
-        {
-            $config_in = Kohana::$config->load('cloudsearch')->as_array();
-            $config = array(
-                Entity_Root::VIEW_KEY => $config_in[Entity_Root::VIEW_KEY],
-                'secret' => $config_in['secret'],
-                'default_cache_config' => $config_in['default_cache_config'],
-                'certificate_authority' => $config_in['certificate_authority'],
-            );
-            $config['domain'] = Kohana::$config->load('cloudsearch.domain_name');
-            $cloudsearch = new AmazonCloudsearch($config);
-            $response = $cloudsearch->describe_domains
-                (array('DomainNames' => $csdomain));
-            if(!isset($response->body->DescribeDomainsResult->DomainStatusList->member))
+            list($this->search_endpoint, $this->document_endpoint) = $memcache->get($memcache_key);
+
+            if (!$this->search_endpoint || !$this->document_endpoint)
             {
-                echo json_encode($response->body) . "\n";
-                throw new Exception("No domain named " . $csdomain);
+                $config = array(
+                    'key' => Kohana::$config->load('cloudsearch.key'),
+                    'secret' => Kohana::$config->load('cloudsearch.secret'),
+                    'region' => Kohana::$config->load('cloudsearch.region'),
+                );
+    
+                $aws = Aws::factory($config);
+                $cloudsearch = $aws->get('CloudSearch');
+                $response = $cloudsearch->describeDomains(array('DomainNames' => array($csdomain)));
+                if (!count($response))
+                {
+                    echo json_encode($response->body) . "\n";
+                    throw new Exception("No domain named " . $csdomain);
+                }
+    
+                foreach ($cloudsearch->getDescribeDomainsIterator() as $d)
+                {
+                    
+                    //@TODO put hardcoded stuff into config files
+                    // date is AWS version number, probably wont change
+                    // famous last words --dchan
+                    $this->search_endpoint = sprintf(
+                        'http://%s/2011-02-01/search?'
+                        ,$d['SearchService']['Endpoint']
+                    );
+
+                    $this->document_endpoint = sprintf(
+                        'http://%s/2011-02-01/documents/batch'
+                        ,$d['DocService']['Endpoint']
+                    );
+                    break;
+                }
+
+                $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+                error_log("CS domain: " . $csdomain . "; search endpoint: " . $this->search_endpoint . "; document endpoint: " . $this->document_endpoint);
+
+                $memcache->set($memcache_key, array($this->search_endpoint,$this->document_endpoint), false, $cache_ttl);
             }
-            $domain = $response->body->DescribeDomainsResult->DomainStatusList->member;
-            
-            $search_endpoint = $domain->SearchService->Endpoint->to_string();
-            //@TODO put hardcoded stuff into config files
-            // date is AWS version number, probably wont change
-            $this->search_endpoint = sprintf('http://%s/2011-02-01/search?', $search_endpoint) ;
-            
-            $document_endpoint = $domain->DocService->Endpoint->to_string();
-            $this->document_endpoint = sprintf('http://%s/2011-02-01/documents/batch', $document_endpoint);
-            
-            $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
-            
-            error_log("CS domain: " . $csdomain . "; search endpoint: " . $this->search_endpoint . "; document endpoint: " . $this->document_endpoint);
-            $memcache->set('cloudsearch_search_endpoint'.$csdomain, $this->search_endpoint, false, $cache_ttl);
-            $memcache->set('cloudsearch_document_endpoint'.$csdomain, $this->document_endpoint, false, $cache_ttl);
-            
-        } 
+        }
+
+        return array(
+            'search' => $this->search_endpoint,
+            'documents' => $this->document_endpoint,
+        );
+        
     }
     
 

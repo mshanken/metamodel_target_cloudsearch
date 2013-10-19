@@ -14,7 +14,7 @@ if (count($argv) != 2)
 
 $domain_definition_file = $argv[1];
 
-require('vendor/autoload.php');
+require('../../vendors/aws/autoload.php');
 use Aws\Common\Aws;
 use Aws\CloudSearch;
 

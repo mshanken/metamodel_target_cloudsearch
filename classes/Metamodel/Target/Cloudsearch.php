@@ -40,79 +40,47 @@ implements Target_Selectable
     protected static $elapsed = null;
     
     /**
-     * helper function for select()
-     */
-    protected function get_query_params(Entity_Row $entity, Selector $selector = null)
-    {
-         $query_parameters = array();
-
-        $base_query = $selector->build_target_query($entity, $this);
-        $field_query = sprintf("(field entity '%s')",
-            strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\")));
-        if(is_null($base_query))
-        {
-            $query_parameters['bq'] = $field_query;
-        }
-        else
-        {
-            $query_parameters['bq'] = sprintf("(and %s %s)", $field_query, $base_query);
-        }
-
-        $query_parameters['return-fields'] = Target_Cloudsearch::FIELD_PAYLOAD;
-
-        if ($rank = $selector->build_target_sort($entity, $this))
-        {
-            $query_parameters['rank'] = $rank;
-        }
-
-        $page = $selector->build_target_page($entity, $this);
-        if(!is_null($page)) 
-        {
-            $query_parameters['start'] = $page[0];
-            $query_parameters['size'] = $page[1];
-        }
-
-        return $query_parameters;
-    }
-
-    /**
-     * helper function for select()
-     */
-    protected function get_facet_params(Entity_Row $entity)
-    {
-        $info = $entity->get_root()->get_target_info($this);
-        $facet_constraints = $info->get_facet_constraints();
-        $facet_parameters = array();
-        $tmp = array();
-        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
-        {
-            if (!$entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k)) continue;
-            if (!array_key_exists($k, $facet_constraints))
-            {
-                $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
-            }
-        }
-        $facet_parameters['facet'] = implode(',', $tmp);
-
-        foreach ($facet_constraints as $k => $v)
-        {
-            $key = sprintf('facet-%s%s%s-constraints', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
-            $facet_parameters[$key] = implode(',', $facet_constraints[$k]);
-        }
-
-        return $facet_parameters;
-    }
-
-
-    /**
      * implements selectable
      */
     public function select(Entity_Row $entity, Selector $selector = null)
     {
-        $query_parameters = $this->get_query_params($entity, $selector);
-        $facet_parameters = $this->get_facet_params($entity);
+        $query_parameters = array(
+            'bq' => sprintf("(field %s '%s')"
+                , Target_Cloudsearch::FIELD_ENTITY
+                , strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\"))
+            ),
+            'return-fields' => Target_Cloudsearch::FIELD_PAYLOAD,
+        );
 
-        $query_parameters = array_merge($query_parameters, $facet_parameters);
+        if (!is_null($selector))
+        {
+            if ($select_query = $selector->build_target_query($entity, $this))
+            {
+                $query_parameters['bq'] = sprintf("(and %s %s)", $query_parameters['bq'], $select_query);
+            }
+
+            if ($rank = $selector->build_target_sort($entity, $this))
+            {
+                $query_parameters['rank'] = $rank;
+            }
+
+            if ($page = $selector->build_target_page($entity, $this))
+            {
+                $query_parameters['start'] = $page[0];
+                $query_parameters['size'] = $page[1];
+            }
+        }    
+
+        $tmp = array();
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
+        {
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
+            {
+                $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
+            }
+        }
+        $query_parameters['facet'] = implode(',', $tmp);
+
         $query_string = http_build_query($query_parameters);
 
         // calls curl to aws
@@ -395,17 +363,8 @@ implements Target_Selectable
             throw('invalid cloudsearch response ... '. var_export($document, true));
         }
 
-        $result_data = Parse::json_parse($payload, true);
         $result = clone $entity;
-        foreach ($result_data as $k => $v) 
-        {
-            $result[$k] = $v;
-        }
-            
-        if (count($document[Target_Cloudsearch::FIELD_PAYLOAD]))
-        {
-            // @TODO do something if extra payloads exist...
-        }
+        $result[Target_Cloudsearch::VIEW_PAYLOAD] = Parse::json_parse($payload, true);
 
         return $result;
     }

@@ -28,17 +28,11 @@ implements Target_Selectable
     const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
 
     /**
-     * URL of AWS cloudsearch API
+     * AWS Domain Description
      *
-     * eg: 
-     * $url = 'http://' . $this->search_endpoint . '/2011-02-01/search?' . $query_string;
+     * search / document url and arn info
      */
-    protected $search_endpoint = null;
-
-    /**
-     *
-     */
-    protected $document_endpoint = null;
+    protected $domain_description = null;
 
     protected $facets = null;
     protected $select_count = null;
@@ -744,11 +738,16 @@ implements Target_Selectable
      */ 
     public function get_search_endpoint() 
     {
-        if (is_null($this->search_endpoint))
+        if (is_null($this->domain_description))
         {
-            $this->get_cloudsearch_domain();
+            $this->get_domain_description();
         }
-        return $this->search_endpoint;
+
+        //@TODO magic
+        return sprintf(
+            'http://%s/2011-02-01/search?'            
+            ,$this->domain_description['SearchService']['Endpoint']
+        );
     }
 
     /**
@@ -758,11 +757,18 @@ implements Target_Selectable
      */
     public function get_document_endpoint() 
     {
-        if (is_null($this->document_endpoint))
+        if (is_null($this->domain_description))
         {
-            $this->get_cloudsearch_domain();
+            $this->get_domain_description();
         }
-        return $this->document_endpoint;
+        
+        //@TODO magic
+        return sprintf(
+            'http://%s/2011-02-01/documents/batch'
+            , $this->domain_description['DocService']['Endpoint']
+        );
+
+
     }
 
     /**
@@ -771,18 +777,16 @@ implements Target_Selectable
      * @see get_document_endpoint, 
      * @see get_search_endpoint
      */
-    private function get_cloudsearch_domain() 
+    public function get_domain_description() 
     {
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
-        $memcache_key = sprintf('cloudsearch_endpoints_%s',$csdomain);
+        $memcache_key = sprintf('cloudsearch_domain_description_%s',$csdomain);
         
-        if (!$this->search_endpoint || !$this->document_endpoint)
+        if (!$this->domain_description)
         {
-            list($this->search_endpoint, $this->document_endpoint) = $memcache->get($memcache_key);
-
-            if (!$this->search_endpoint || !$this->document_endpoint)
+            if (!($this->domain_description = $memcache->get($memcache_key)))
             {
                 $config = array(
                     'key' => Kohana::$config->load('cloudsearch.key'),
@@ -801,34 +805,19 @@ implements Target_Selectable
     
                 foreach ($cloudsearch->getDescribeDomainsIterator() as $d)
                 {
-                    
-                    //@TODO put hardcoded stuff into config files
-                    // date is AWS version number, probably wont change
-                    // famous last words --dchan
-                    $this->search_endpoint = sprintf(
-                        'http://%s/2011-02-01/search?'
-                        ,$d['SearchService']['Endpoint']
-                    );
-
-                    $this->document_endpoint = sprintf(
-                        'http://%s/2011-02-01/documents/batch'
-                        ,$d['DocService']['Endpoint']
+                    $this->domain_description = array(
+                        'SearchService' => $d['SearchService'],
+                        'DocService' => $d['DocService'],
                     );
                     break;
                 }
 
                 $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
-                error_log("CS domain: " . $csdomain . "; search endpoint: " . $this->search_endpoint . "; document endpoint: " . $this->document_endpoint);
-
-                $memcache->set($memcache_key, array($this->search_endpoint,$this->document_endpoint), false, $cache_ttl);
+                $memcache->set($memcache_key, $this->domain_description, false, $cache_ttl);
             }
         }
 
-        return array(
-            'search' => $this->search_endpoint,
-            'documents' => $this->document_endpoint,
-        );
-        
+        return $this->domain_description;
     }
     
 

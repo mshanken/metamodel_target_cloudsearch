@@ -13,7 +13,6 @@ if (count($argv) != 2)
 }
 
 $domain_definition_file = $argv[1];
-var_dump($argv);
 
 require(__DIR__ . '/../../vendors/aws/autoload.php');
 use Aws\Common\Aws;
@@ -31,13 +30,63 @@ $domain_name = array_keys($domain_definition);
 $domain_name = array_shift($domain_name);
 
 echo "\n\nCreating domain: {$domain_name}";
-$result = $cloudsearch->createDomain(array('DomainName' => $domain_name));
+$create_result = $cloudsearch->createDomain(array('DomainName' => $domain_name));
+
 
 foreach ($domain_definition[$domain_name] as $field_name => $field_definition) 
 {
     echo "\nCreating index field {$field_name} : ";
-    $result = $cloudsearch->defineIndexField(array(
+    $field_result = $cloudsearch->defineIndexField(array(
         'DomainName' => $domain_name,
         'IndexField' => $field_definition,
     ));
 }
+
+echo "\n\n Configuring Access Policies";
+
+$create_result = $create_result->toArray();
+$s_arn = $create_result['DomainStatus']['SearchService']['Arn'];
+$d_arn = $create_result['DomainStatus']['DocService']['Arn'];
+//@TODO magic
+$ip='38.100.174.226';
+
+$policy = array(
+    'Statement' => array(
+        array(
+            'Effect' => 'Allow',
+            'Action' => '*',
+            'Resource' => $s_arn,
+            'Condition' => array(
+                'IpAddress' => array(
+                    'aws:SourceIp' => array(
+                        sprintf('%s/32', $ip),
+                    ),
+                ),
+            ),
+        ),
+        array(
+            'Effect' => 'Allow',
+            'Action' => '*',
+            'Resource' => $d_arn,
+            'Condition' => array(
+                'IpAddress' => array(
+                    'aws:SourceIp' => array(
+                        sprintf('%s/32', $ip),
+                    ),
+                ),
+            ),
+        ),
+    ),
+);
+
+$result = $cloudsearch->UpdateServiceAccessPolicies(array(
+    'DomainName' => $domain_name,
+    'AccessPolicies' => json_encode($policy),
+));
+
+echo "\n\n Configuring stop words";
+
+$cloudsearch->UpdateStopwordOptions(array(
+    'DomainName' => $domain_name,
+    'Stopwords' => json_encode(array('stopwords'=>array())),
+));

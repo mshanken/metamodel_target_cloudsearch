@@ -26,32 +26,6 @@ extends Target_Info
     {
     }
     
-    // textual ?
-    public function set_numeric($field_name) {
-        $this->field_types[$field_name] = 'numeric';
-    }
-    
-    public function is_numeric($field_name) {
-        return array_key_exists($field_name, $this->field_types)
-               && ($this->field_types[$field_name] == 'numeric');
-    }
-    
-    public function set_facet_mapping($field,array $map, $default = null)
-    {
-        $this->facet_maps[$field] = array(
-            'cases' => $map,
-            'default' => $default,
-        );
-    }
-
-    public function get_facet_mapping($field)
-    {
-        if (array_key_exists($field, $this->facet_maps))
-            return $this->facet_maps[$field];
-
-        return false;
-    }
-
     // @TODO
     public function validate(Entity_Root $root)
     {

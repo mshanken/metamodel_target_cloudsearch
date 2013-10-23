@@ -22,6 +22,7 @@ implements Target_Selectable
 
     const ATTR_FREETEXT = 'do_search';
     const ATTR_FACET = 'do_facet';
+    const ATTR_FACET_MAP = 'do_facet_map';
 
     const FIELD_PAYLOAD = 'cst_payload';
     const FIELD_ENTITY = 'cst_entity';
@@ -52,7 +53,7 @@ implements Target_Selectable
             'return-fields' => Target_Cloudsearch::FIELD_PAYLOAD,
         );
 
-        if (!is_null($selector))
+        if ($selector instanceof Selector)
         {
             if ($select_query = $selector->build_target_query($entity, $this))
             {
@@ -76,7 +77,28 @@ implements Target_Selectable
         {
             if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
             {
-                $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
+                if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k)) 
+                {
+                    $tmp[] = sprintf('%s%s%s_%s'
+                    , $entity->get_root()->get_name()
+                    , Target_Cloudsearch::DELIMITER
+                    , $k
+                    , Target_Cloudsearch::ATTR_FACET_MAP
+                    );
+                }
+                elseif ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k)) 
+                {
+                    $tmp[] = sprintf('%s%s%s_%s'
+                    , $entity->get_root()->get_name()
+                    , Target_Cloudsearch::DELIMITER
+                    , $k
+                    , Target_Cloudsearch::ATTR_FACET
+                    );
+                }
+                else
+                {
+                    $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
+                }
             }
         }
         $query_parameters['facet'] = implode(',', $tmp);
@@ -374,7 +396,8 @@ implements Target_Selectable
      *
      * @param column_name is true name
      */
-    public function visit_exact($entity, $column_name, $param) {
+    public function visit_exact($entity, $column_name, $param) 
+    {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
         $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
         if (array_key_exists($alias, $children))

@@ -5,15 +5,15 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
     private $info = null;
 
-    protected function source_map($field, $info)
+    protected function source_map($field, $view)
     {   
         $field_name = $field['IndexFieldName'];
-        $map_field_name = sprintf('%s_facet_map', $field_name);
+        $map_field_name = sprintf('%s_%s', $field_name, Target_Cloudsearch::ATTR_FACET_MAP);
 
         $column_name = explode(Target_Cloudsearch::DELIMITER, $field_name);
         $column_name = array_pop($column_name);
 
-        if ($map = $info->get_facet_mapping($column_name)) 
+        if ($map = $view->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $column_name)) 
         {
             $field = $this->literal_field($map_field_name, true, false, false);
         
@@ -200,10 +200,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         }
 
         // create a facet_map field if needed
-        $info = $entity->get_root()->get_target_info($cs);
+        $info = $entity->get_root();
         foreach ($field_definitions as $k => $v)
         {
-            $field_definitions += $this->source_map($v, $info);
+            $field_definitions += $this->source_map($v, $info[Target_Cloudsearch::VIEW_INDEXER]);
         }
 
         // general search field
@@ -223,8 +223,12 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 $copy[] = $v['IndexFieldName'];
             }
         }
-        $field_definitions += $this->text_field($universal_field, false, false);
-        $field_definitions[$universal_field] = $this->source_copy($field_definitions[$universal_field], $copy);
+
+        if (count($copy))
+        {
+            $field_definitions += $this->text_field($universal_field, false, false);
+            $field_definitions[$universal_field] = $this->source_copy($field_definitions[$universal_field], $copy);
+        }
 
         return $field_definitions;
     }

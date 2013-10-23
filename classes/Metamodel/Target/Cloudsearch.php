@@ -20,7 +20,6 @@ implements Target_Selectable
 
     const DELIMITER = '__x__';
 
-    const ATTR_FREETEXT = 'do_search';
     const ATTR_FACET = 'do_facet';
     const ATTR_FACET_MAP = 'do_facet_map';
 

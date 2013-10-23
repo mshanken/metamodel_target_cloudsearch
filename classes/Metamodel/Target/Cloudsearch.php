@@ -821,4 +821,40 @@ implements Target_Selectable
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
+    public function is_selectable(Entity_Root $entity, $entanglement_name, array $allowed)
+    {
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
+        {
+            if ($entanglement_name == $v->get_entanglement_name($k)) 
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function add_selectable(Selector $selector)
+    {
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
+        {
+            if ($v->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k))
+            {
+                $selector->security->allow(
+                    sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET_MAP)
+                    , array(
+                        Selector::EXACT
+                    )
+                );
+            }
+            else if ($v->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
+            {
+                $selector->security->allow(
+                    sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET)
+                    , array(
+                        Selector::EXACT
+                    )
+                );
+            }
+        }
+    }
 }

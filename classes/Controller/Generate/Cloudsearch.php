@@ -67,7 +67,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         $ret = array($name => null);
         if ($facet && $result)
         {
-            $facet_name = sprintf('%s_facet', $name);
+            $facet_name = sprintf('%s_%s', $name, Target_Cloudsearch::ATTR_FACET);
             $facet_field = $this->literal_field($facet_name, true, false, false, null);
             $facet_field[$facet_name] = $this->source_copy($facet_field[$facet_name], array($name));
 
@@ -103,7 +103,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         $ret = array($name => null);
         if ($facet && $result)
         {
-            $facet_name = sprintf('%s_facet', $name);
+            $facet_name = sprintf('%s_%s', $name, Target_Cloudsearch::ATTR_FACET);
             $facet_field = $this->literal_field($facet_name, true, false, false, null);
             $facet_field[$facet_name] = $this->source_copy($facet_field[$facet_name], array($name));
             $facet = false;

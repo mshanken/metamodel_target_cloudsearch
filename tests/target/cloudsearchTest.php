@@ -22,7 +22,7 @@ implements Target_Cloudsearchable
 
         // a string freetext
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Target_Cloudsearch::ATTR_FREETEXT, 'test_string_freetext');
+        $this[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
 
         // a date
         $this[Target_Cloudsearch::VIEW_INDEXER]['date'] = new Entity_Column('test_date', Type::factory('date'));
@@ -57,11 +57,11 @@ implements Target_Cloudsearchable
         $pivot['test_date'] = new Entity_Column('test_date', Type::factory('date'));
         $pivot['test_integer'] = new Entity_Column('test_integer', Type::factory('int'));
         $pivot['test_uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
-        $pivot->set_attribute(Target_Cloudsearch::ATTR_FREETEXT, 'test_string_freetext');
+        $pivot->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
         $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_freetext');
         $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_literal');
         $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_uuid');
-        $pivot->set_attribute(Selector::SORTABLE, 'test_uuid');
+        $pivot->set_attribute(Selector::ATTR_SORTABLE, 'test_uuid');
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_pivot_complex'] = array($pivot);
 
         // a nested array
@@ -71,11 +71,11 @@ implements Target_Cloudsearchable
         $nestee['test_date'] = new Entity_Column('test_date', Type::factory('date'));
         $nestee['test_integer'] = new Entity_Column('test_integer', Type::factory('int'));
         $nestee['test_uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
-        $nestee->set_attribute(Target_Cloudsearch::ATTR_FREETEXT, 'test_string_freetext');
+        $nestee->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
         $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_freetext');
         $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_literal');
         $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_uuid');
-        $nestee->set_attribute(Selector::SORTABLE, 'test_uuid');
+        $nestee->set_attribute(Selector::ATTR_SORTABLE, 'test_uuid');
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_nested'] = array($nestee);
 
         $this['api'] = clone $this[Target_Cloudsearch::VIEW_INDEXER];

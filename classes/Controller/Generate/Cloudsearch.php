@@ -266,16 +266,16 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             return $this->uint_field($field_name);
         }
     
-        if ($parent->get_attribute(Target_Cloudsearch::ATTR_FREETEXT, $alias))
+        if ($parent->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))
         {
             return $this->text_field($field_name
                 , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-                , $parent->get_attribute(Selector::SORTABLE, $alias)
+                , $parent->get_attribute(Selector::ATTR_SORTABLE, $alias)
             );
         }
         return $this->literal_field($field_name
             , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-            , $parent->get_attribute(Selector::SORTABLE, $alias)
+            , $parent->get_attribute(Selector::ATTR_SORTABLE, $alias)
             , true
         );
     }

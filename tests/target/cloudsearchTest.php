@@ -10,11 +10,11 @@ implements Target_Cloudsearchable
         
         $this[Entity_Root::VIEW_KEY] = new Entity_Columnset(Entity_Root::VIEW_KEY);
         $this[Entity_Root::VIEW_KEY]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
-        $this[Entity_Root::VIEW_KEY]->set_attribute(Entity_Root::REQUIRED, 'primary_id');
+        $this[Entity_Root::VIEW_KEY]->set_attribute(Entity_Root::ATTR_REQUIRED, 'primary_id');
 
         $this[Entity_Root::VIEW_TS] = new Entity_Columnset('timestamp');
         $this[Entity_Root::VIEW_TS]['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
-        $this[Entity_Root::VIEW_TS]->set_attribute(Entity_Root::REQUIRED, 'modified_at');
+        $this[Entity_Root::VIEW_TS]->set_attribute(Entity_Root::ATTR_REQUIRED, 'modified_at');
 
         $this[Target_Cloudsearch::VIEW_INDEXER] = new Entity_Columnset('indexer');
         // a string literal

@@ -760,7 +760,7 @@ implements Target_Selectable
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
-        $memcache_key = sprintf('cloudsearch_domain_description_%s',$csdomain);
+        $memcache_key = sprintf('cloudsearch_domain_desc_%s',$csdomain);
         
         if (!$this->domain_description)
         {
@@ -783,15 +783,26 @@ implements Target_Selectable
     
                 foreach ($cloudsearch->getDescribeDomainsIterator() as $d)
                 {
-                    $this->domain_description = array(
-                        'SearchService' => $d['SearchService'],
-                        'DocService' => $d['DocService'],
-                    );
+                    $this->domain_description = array();
+                    if (array_key_exists('SearchService',$d)) $this->domain_description['SearchService'] = $d['SearchService'];
+                    if (array_key_exists('DocService',$d)) $this->domain_description['DocService'] = $d['DocService'];
+
                     break;
                 }
 
-                $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
-                $memcache->set($memcache_key, $this->domain_description, false, $cache_ttl);
+                // only cache valid
+                // sometimes when the domain is not ready, we get no endpoint
+                if (array_key_exists('SearchService',$this->domain_description) 
+                    && array_key_exists('Arn',$this->domain_description['SearchService'])
+                    && array_key_exists('Endpoint',$this->domain_description['SearchService'])
+                    && array_key_exists('DocService',$this->domain_description)
+                    && array_key_exists('Arn',$this->domain_description['DocService'])
+                    && array_key_exists('Endpoint',$this->domain_description['DocService'])
+                )
+                {
+                    $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+                    $memcache->set($memcache_key, $this->domain_description, false, $cache_ttl);
+                }
             }
         }
 

@@ -107,7 +107,6 @@ implements Target_Selectable
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
-
         $options = array(
             CURLOPT_RETURNTRANSFER => true,
         );
@@ -411,14 +410,17 @@ implements Target_Selectable
             , $this->clean_field_name($alias)
         );
 
-        if($info->is_numeric($column_name))
-        {
-            return sprintf("(field %s %s)", $column_name_renamed, $param);
-        } else {
+// @TODO weirdness i think knapp used to specify which fields were numeric 
+// manually in the entity?!
+// probably we can use type ?
+//        if($info->is_numeric($column_name))
+//        {
+//            return sprintf("(field %s %s)", $column_name_renamed, $param);
+//        } else {
             return sprintf("(field %s '%s')", $column_name_renamed,
                 strtr($param, array("'" => "\\\'","\\" => "\\\\"))
             );
-        }
+//        }
     }
     
     /**
@@ -434,7 +436,6 @@ implements Target_Selectable
             $param = $this->type_transform($children[$alias], $param);
         }
 
-        $info = $entity->get_root()->get_target_info($this);
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);
         $field_name = sprintf("%s%s%s"
@@ -553,7 +554,6 @@ implements Target_Selectable
             $param = $this->type_transform($children[$alias], $param);
         }
 
-        $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s ..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -576,7 +576,6 @@ implements Target_Selectable
             $param = $this->type_transform($children[$alias], $param);
         }
 
-        $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -599,7 +598,6 @@ implements Target_Selectable
             $max = $this->type_transform($children[$alias], $max);
         }
 
-        $info = $entity->get_root()->get_target_info($this);
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -615,7 +613,6 @@ implements Target_Selectable
      */
     public function visit_isnull($entity, $column_name) 
     {
-        $info = $entity->get_root()->get_target_info($this);
         return sprintf("(not (field %s%s%s '*'))"
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -822,21 +819,24 @@ implements Target_Selectable
 
     public function is_selectable(Entity_Root $entity, $entanglement_name, array $allowed)
     {
-        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
+        foreach (array(Target_Cloudsearch::VIEW_INDEXER, Entity_Root::VIEW_KEY, Entity_Root::VIEW_TS) as $view)
         {
-            if ($entanglement_name == $v->get_entanglement_name($k)) 
+            foreach ($entity[$view]->get_children() as $k => $v)
             {
-                return true;
+                if ($entanglement_name == $entity[$view]->get_entanglement_name($k)) 
+                {
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    public function add_selectable(Selector $selector)
+    public function add_selectable(Entity_Root $entity, Selector $selector)
     {
-        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_children() as $k => $v)
         {
-            if ($v->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k))
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k))
             {
                 $selector->security->allow(
                     sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET_MAP)
@@ -845,7 +845,7 @@ implements Target_Selectable
                     )
                 );
             }
-            else if ($v->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
+            else if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
             {
                 $selector->security->allow(
                     sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET)

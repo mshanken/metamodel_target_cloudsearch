@@ -760,7 +760,7 @@ implements Target_Selectable
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
-        $memcache_key = sprintf('cloudsearch_domain_desc_%s',$csdomain);
+        $memcache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
         
         if (!$this->domain_description)
         {

@@ -32,14 +32,15 @@ $domain_name = array_shift($domain_name);
 echo "\n\nCreating domain: {$domain_name}";
 $create_result = $cloudsearch->createDomain(array('DomainName' => $domain_name));
 
-
 foreach ($domain_definition[$domain_name] as $field_name => $field_definition) 
 {
     echo "\nCreating index field {$field_name} : ";
-    $field_result = $cloudsearch->defineIndexField(array(
+    $f = array(
         'DomainName' => $domain_name,
         'IndexField' => $field_definition,
-    ));
+    );
+    //var_dump($f);
+    $field_result = $cloudsearch->defineIndexField($f);
 }
 
 echo "\n\n Configuring Access Policies";
@@ -90,3 +91,7 @@ $cloudsearch->UpdateStopwordOptions(array(
     'DomainName' => $domain_name,
     'Stopwords' => json_encode(array('stopwords'=>array())),
 ));
+
+echo "\n\n Initial Indexing started to allow data upload";
+
+$cloudsearch->indexDocuments(array('DomainName' => $domain_name));

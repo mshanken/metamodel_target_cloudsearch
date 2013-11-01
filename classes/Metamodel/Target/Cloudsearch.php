@@ -828,22 +828,47 @@ implements Target_Selectable
         return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
-    public function is_selectable(Entity_Root $entity, $entanglement_name, array $allowed)
+    public function selectable_helper($entity, $entanglement_name) 
     {
-        foreach (array(Target_Cloudsearch::VIEW_INDEXER, Entity_Root::VIEW_KEY, Entity_Root::VIEW_TS) as $view)
+        foreach ($entity->get_children() as $k => $v)
         {
-            foreach ($entity[$view]->get_children() as $k => $v)
+            if ($entanglement_name == $entity->get_entanglement_name($k)) 
             {
-                if ($entanglement_name == $entity[$view]->get_entanglement_name($k)) 
-                {
-                    return true;
-                }
+                // echo "\n<li> FOUND " . $entity->get_entanglement_name($k) . ' == ' . $entanglement_name . "</li>\n";;
+                return true;
+            }
+
+            if ($v instanceof Entity_Array_Nested) 
+            {
+                if ($this->selectable_helper($v->get_child(), $entanglement_name)) return true;
+            } 
+            else if ($v instanceof Entity_Columnset)
+            {
+                if ($this->selectable_helper($v, $entanglement_name)) return true;
             }
         }
         return false;
     }
 
-    public function add_selectable(Entity_Root $entity, Selector $selector)
+
+    public function is_selectable(Entity_Store $entity, $entanglement_name, array $allowed)
+    {
+        // @TODO only one layer of array nesting supported here ?
+        if (!($entity instanceof Entity_Root)) $entity = $entity->get_root();
+
+        foreach (array(Target_Cloudsearch::VIEW_INDEXER, Entity_Root::VIEW_KEY, Entity_Root::VIEW_TS) as $view)
+        {
+            if ($this->selectable_helper($entity[$view], $entanglement_name))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    public function add_selectable(Entity_Store $entity, Selector $selector)
     {
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_children() as $k => $v)
         {

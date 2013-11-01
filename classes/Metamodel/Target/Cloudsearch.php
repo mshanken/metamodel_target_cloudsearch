@@ -402,6 +402,7 @@ implements Target_Selectable
         {
             $param = $this->type_transform($children[$alias], $param);
         }
+        //var_dump(array($alias,$column_name));
 
         $info = $entity->get_root()->get_target_info($this);
         $column_name_renamed = sprintf('%s%s%s'
@@ -668,32 +669,21 @@ implements Target_Selectable
      */
     public function visit_sort($entity, array $items) 
     {
-        $result = "";
+        $results = array();
         $i = 0;
-        foreach($items as $item)
+        foreach($items as list($column_name, $direction))
         {
-            if($i > 0) $result .= ",";
-            
-            if($item[1] == "desc") $result .= '-';
-            
-            $entity_name = $entity->get_root()->get_name();
-            $entity_name = strtolower($entity_name);
-            $entity_name = preg_replace('/-/', '_', $entity_name);
-            $entity_name = preg_replace('/[^a-z0-9_]/', '', $entity_name);
-            $result .= $entity_name;
-            
-            $result .= Target_Cloudsearch::DELIMITER;
-            
-            $column_name = $item[0];
-            $column_name = strtolower($column_name);
-            $column_name = preg_replace('/-/', '_', $column_name);
-            $column_name = preg_replace('/[^a-z0-9_]/', '', $column_name);
-            $result .= $column_name;
-            
-            $i++;
+            $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+
+            $results[] = sprintf('%s%s%s%s'
+                , ($direction == 'desc') ? '-' : ''
+                , $this->clean_field_name($entity->get_root()->get_name())
+                , Target_Cloudsearch::DELIMITER
+                , $this->clean_field_name($alias)
+            );
         }
         
-        return $result;
+        return implode(',', $results);
     }
     
     public function get_facets() 

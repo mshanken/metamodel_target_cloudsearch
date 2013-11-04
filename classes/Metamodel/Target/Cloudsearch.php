@@ -436,6 +436,14 @@ implements Target_Selectable
         {
             $param = $this->type_transform($children[$alias], $param);
         }
+        else if ($column_name == Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD)
+        {
+            $alias = $column_name;
+        }
+        else
+        {
+            throw new Exception('unknown field, '. $alias . ' aka ' . $column_name);
+        }
 
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);

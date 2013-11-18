@@ -5,26 +5,70 @@ use Aws\CloudSearch;
 
 
 /**
- * target/cloudsearch.php
- * 
- * @package Metamodel
- * @subpackage Target
- * @author dknapp@mshanken.com
+ * Metamodel_Target_Cloudsearch
  *
- **/
-Class Metamodel_Target_Cloudsearch
-implements Target_Selectable
+ * @uses Target_Selectable
+ * @package 
+ * @version $id$
+ * @copyright 2013 Mshanken Communications
+ * @author dknapp@mshanken.com
+ * @license BSD-3 {@link https://github.com/mshanken/metamodel/blob/master/LICENSE.md}
+ */
+class Metamodel_Target_Cloudsearch implements Target_Selectable
 {
+    /**
+     * VIEW_PAYLOAD 
+     *
+     * @const string
+     */
     const VIEW_PAYLOAD = 'cloudsearch_payload';
+    /**
+     * VIEW_INDEXER 
+     *
+     * @const string
+     */
     const VIEW_INDEXER = 'cloudsearch_indexer';
 
+    /**
+     * DELIMITER 
+     *
+     * @const string
+     */
     const DELIMITER = '__x__';
 
+    /**
+     * ATTR_FACET 
+     *
+     * @const string
+     */
     const ATTR_FACET = 'do_facet';
+    
+    /**
+     * ATTR_FACET_MAP 
+     *
+     * @const string
+     */
     const ATTR_FACET_MAP = 'do_facet_map';
 
+    /**
+     * FIELD_PAYLOAD 
+     *
+     * @const string
+     */
     const FIELD_PAYLOAD = 'cst_payload';
+    
+    /**
+     * FIELD_ENTITY 
+     *
+     * @const string
+     */
     const FIELD_ENTITY = 'cst_entity';
+
+    /**
+     * UNIVERSAL_SEARCH_FIELD 
+     *
+     * @const string
+     */
     const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
 
     /**
@@ -34,13 +78,32 @@ implements Target_Selectable
      */
     protected $domain_description = null;
 
+    /**
+     * facets 
+     *
+     * @var mixed
+     * @access protected
+     */
     protected $facets = null;
+
+    /**
+     * select_count 
+     *
+     * @var mixed
+     * @access protected
+     */
     protected $select_count = null;
     
     protected static $elapsed = null;
     
     /**
-     * implements selectable
+     * select
+     *
+     * @see Entity_Selectable
+     * @param Entity_Row $entity
+     * @param Selector $selector
+     * @access public
+     * @return void
      */
     public function select(Entity_Row $entity, Selector $selector = null)
     {
@@ -152,9 +215,12 @@ implements Target_Selectable
     }
 
     /**
-     * implements selectable
+     * select_count
      *
-     * @returns number of rows returned
+     * @param Entity_Row $entity
+     * @param Selector $selector
+     * @access public
+     * @return void
      */
     public function select_count(Entity_Row $entity, Selector $selector = null)
     {
@@ -848,20 +914,17 @@ implements Target_Selectable
         return false;
     }
 
-
-    public function is_selectable(Entity_Store $entity, $entanglement_name, array $allowed)
+    public function is_selectable(Entity_Row $row, $entanglement_name, array $allowed)
     {
-        // @TODO only one layer of array nesting supported here ?
-        if (!($entity instanceof Entity_Root)) $entity = $entity->get_root();
-
-        foreach (array(Target_Cloudsearch::VIEW_INDEXER, Entity_Root::VIEW_KEY, Entity_Root::VIEW_TS) as $view)
+        foreach (array(Entity_Root::VIEW_KEY
+                    , Entity_Root::VIEW_TS
+                    , Target_Cloudsearch::VIEW_INDEXER) as $view)
         {
-            if ($this->selectable_helper($entity[$view], $entanglement_name))
+            if ($row[$view]->lookup_entanglement_name($entanglement_name) !== false)
             {
                 return true;
             }
         }
-
         return false;
     }
 

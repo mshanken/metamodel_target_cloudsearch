@@ -45,13 +45,13 @@ implements Target_Cloudsearchable
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_simple_array'] = array(new Entity_Column('test_array_simple_node', Type::factory('int')));
 
         // a pivot
-        $pivot = new Entity_Columnset_Join('test_colset');
+        $pivot = new Entity_Columnset_Join('test_colset_nested');  // entangles with a_nested_array
         $pivot['test_string_pivot'] = new Entity_Column('test_string_literal', Type::factory('string'));
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_pivot'] = array($pivot);
 
 
         // a pivot join
-        $pivot = new Entity_Columnset_Join('test_colset');
+        $pivot = new Entity_Columnset_Join('test_colset_nested'); // entangles with a_nested_pivot
         $pivot['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
         $pivot['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
         $pivot['test_date'] = new Entity_Column('test_date', Type::factory('date'));
@@ -65,7 +65,7 @@ implements Target_Cloudsearchable
         $this[Target_Cloudsearch::VIEW_INDEXER]['test_pivot_complex'] = array($pivot);
 
         // a nested array
-        $nestee = new Entity_Columnset('test_colset');
+        $nestee = new Entity_Columnset('test_colset_nested');
         $nestee['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
         $nestee['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
         $nestee['test_date'] = new Entity_Column('test_date', Type::factory('date'));
@@ -136,7 +136,7 @@ class CloudsearchTest extends Unittest_TestCase
 
         $json = $target->create_document($entity);
         $parsed = Parse::json_parse($json, true);
-        
+
         $this->assertEquals(5, count($parsed));
         $this->assertEquals("add", $parsed['type']);
         $this->assertEquals("en", $parsed['lang']);
@@ -215,13 +215,15 @@ class CloudsearchTest extends Unittest_TestCase
 
         for ($i = 0; $i < 3; $i++)
         {
-            $this->assertTrue(in_array($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_literal'], $fields[sprintf('example%stest_nested_test_string_literal', Target_Cloudsearch::DELIMITER)]));
-            $this->assertTrue(in_array($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_freetext'], $fields[sprintf('example%stest_nested_test_string_freetext', Target_Cloudsearch::DELIMITER)]));
-            $this->assertTrue(in_array($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_integer'], $fields[sprintf('example%stest_nested_test_integer', Target_Cloudsearch::DELIMITER)]));
-            $this->assertTrue(in_array($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_uuid'], $fields[sprintf('example%stest_nested_test_uuid', Target_Cloudsearch::DELIMITER)]));
-        
+            $this->assertContains(
+                $entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_literal']
+                , $fields[sprintf('example%stest_nested_test_string_literal', Target_Cloudsearch::DELIMITER)]
+            );
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_freetext'], $fields[sprintf('example%stest_nested_test_string_freetext', Target_Cloudsearch::DELIMITER)]);
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_integer'], $fields[sprintf('example%stest_nested_test_integer', Target_Cloudsearch::DELIMITER)]);
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_uuid'], $fields[sprintf('example%stest_nested_test_uuid', Target_Cloudsearch::DELIMITER)]);
             $date = DateTime::createFromFormat('Y-m-d', $entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_date']);
-            $this->assertTrue(in_array($date->format('U'), $fields[sprintf('example%stest_nested_test_date', Target_Cloudsearch::DELIMITER)]));
+            $this->assertContains($date->format('U'), $fields[sprintf('example%stest_nested_test_date', Target_Cloudsearch::DELIMITER)]);
         }
 
 

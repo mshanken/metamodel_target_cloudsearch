@@ -461,6 +461,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         return $result;
     }
     
+
     /**
      * satisfy selector visitor interface
      *
@@ -469,7 +470,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_exact($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+        $alias = $this->visit_column_name($entity, $column_name);
+
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -503,7 +505,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_search($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -511,10 +513,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         else if ($column_name == Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD)
         {
             $alias = $column_name;
-        }
-        else
-        {
-            throw new Exception('unknown field, '. $alias . ' aka ' . $column_name);
         }
 
         $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
@@ -629,7 +627,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_max($entity, $column_name, $param) 
     { 
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -651,7 +649,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_min($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -672,7 +670,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_range($entity, $column_name, $min, $max) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $min = $this->type_transform($children[$alias], $min);
@@ -958,5 +956,36 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 );
             }
         }
+    }
+
+    /**
+     * Helper for the visit_*() interface that builds WHERE clauses out of selectors.
+     * Responsible for looking up an actual column name as it is seen by Postgres.
+     */
+    private function visit_column_name($entity, $column_name)
+    {
+        if ($alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name))
+        {
+            return $alias;
+        }
+
+        if ($alias = strstr($column_name, '_'.Target_Cloudsearch::ATTR_FACET_MAP, true)) 
+        {
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $alias))
+            {
+                return $column_name;
+            }   
+        }
+
+        if ($alias = strstr($column_name, '_'.Target_Cloudsearch::ATTR_FACET, true)) 
+        {
+        
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias))
+            {
+                return $alias;
+            }   
+        }
+
+        throw new HTTP_Exception_400(sprintf('Unknown selector field %s', $column_name));
     }
 }

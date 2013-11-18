@@ -243,7 +243,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      * so we require that all three are passed in.
      *
      */
-    public function type_transform(Entity_Base $parent, $type, $alias, $value, $fields, $field_name)
+    public function type_transform(Entity_Structure $parent, $type, $alias, $value, $fields, $field_name)
     {
 
         // Pivot children

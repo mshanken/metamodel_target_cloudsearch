@@ -342,8 +342,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @see type_transform()
      */
     // public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), $format_function = null)
-    // @TODO this typehint is only available in 5.4
-    protected function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), callable $format_function = null)
+    public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), callable $format_function = null)
     {
         if (is_null($format_function)) $format_function = array($this, 'type_transform_translate');
         $structure = $parent->get_children();

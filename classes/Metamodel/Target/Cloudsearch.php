@@ -341,9 +341,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * 
      * @see type_transform()
      */
-    public function targetize_fields(Entity_Base $parent, array $entity_name, array $fields = array(), $format_function = null)
+    // public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), $format_function = null)
     // @TODO this typehint is only available in 5.4
-    //protected function targetize_fields(Entity_Base $parent, array $entity_name, array $fields, callable $format_function=)
+    protected function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), callable $format_function = null)
     {
         if (is_null($format_function)) $format_function = array($this, 'type_transform_translate');
         $structure = $parent->get_children();
@@ -351,6 +351,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         foreach ($structure as $alias => $type)
         {
+
+//echo "\n ___ ".implode('@',$entity_name)."  $alias __ ". get_class($type);
+
             $entity = array_shift($entity_name);
             $entity_name[] = $this->clean_field_name($alias);
             $field_name = sprintf('%s%s%s'
@@ -363,7 +366,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
             if ($type instanceof Type_Typeable)
             {
-                $fields += call_user_func_array($format_function, array(
+                $new = call_user_func_array($format_function, array(
                     $parent,
                     $type,
                     $alias,
@@ -371,6 +374,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     $fields,
                     $field_name,
                 ));
+                $fields = array_merge($fields,$new);
+//                var_export($new);
             }
         
             else if ($type instanceof Entity_Columnset)
@@ -383,14 +388,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
             else if ($type instanceof Entity_Array_Pivot || $type instanceof Entity_Array_Simple)
             {
-                $fields += call_user_func_array($format_function, array(
+                $fields = array_merge($fields, call_user_func_array($format_function, array(
                     $type,
                     $type->get_child(),
                     $alias,
                     $value[$alias],
                     $fields,
                     $field_name,
-                ));
+                )));
             }
             else if ($type instanceof Entity_Array_Nested)
             {
@@ -398,7 +403,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $entity_path[] = $alias;
                 foreach ($type as $k => $v)
                 {
-                    $fields = $this->targetize_fields($type->get_child(), $entity_path, $fields, $format_function);
+                    // $fields = $this->targetize_fields($type->get_child(), $entity_path, $fields, $format_function);
+                    $fields = $this->targetize_fields($v, $entity_path, $fields, $format_function);
                 }
             }
         }   

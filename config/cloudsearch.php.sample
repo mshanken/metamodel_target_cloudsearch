@@ -1,0 +1,18 @@
+<?php defined('SYSPATH') or die('No direct access allowed.');
+
+return array
+(
+    //cloudsearch info
+    'key' => '',
+    'secret' => '',
+    'region' => '', // one of: us-east-1, us-west-1, us-west-2, eu-west-1, ap-southeast-1
+    'certificate_authority' => true, // THIS IS A LOAD-BEARING COMMENT
+
+    //cloudsearch domains
+    'domain_name' => '',
+    
+    //memcache info
+    'cache_host' => 'localhost',
+    'cache_port' => 11211,
+    'cache_ttl' => 2592000,
+);

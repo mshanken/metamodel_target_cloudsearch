@@ -108,7 +108,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function select(Entity_Row $entity, Selector $selector = null)
     {
         $query_parameters = array(
-            'bq' => sprintf("(field %s '%s')"
+            // @TODO use visit_exact()
+            'bq' => sprintf("%s:'%s'"
                 , Target_Cloudsearch::FIELD_ENTITY
                 , strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\"))
             ),
@@ -166,6 +167,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $query_parameters['facet'] = implode(',', $tmp);
 
         $query_string = http_build_query($query_parameters);
+
 
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
@@ -483,18 +485,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
-
-// @TODO weirdness i think knapp used to specify which fields were numeric 
-// manually in the entity?!
-// probably we can use type ?
-//        if($info->is_numeric($column_name))
-//        {
-//            return sprintf("(field %s %s)", $column_name_renamed, $param);
-//        } else {
-            return sprintf("(field %s '%s')", $column_name_renamed,
-                strtr($param, array("'" => "\\\'","\\" => "\\\\"))
-            );
-//        }
+        return sprintf(" %s:'%s' "
+                , $column_name_renamed
+                , strtr($param, array("'" => "\\\'","\\" => "\\\\")
+        ));
     }
     
     /**
@@ -705,7 +699,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_operator_and($entity, array $parts) 
     {
         if(count($parts) > 0)
-            return sprintf('(and %s)', implode(' ', $parts));
+//            return sprintf('(and %s)', implode(' ', $parts));
+            return implode(' ', $parts);
         else
             return NULL;
     }
@@ -981,7 +976,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         
             if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias))
             {
-                return $alias;
+                return $column_name;
+                return $alias;  // strip _do_facet part
             }   
         }
 

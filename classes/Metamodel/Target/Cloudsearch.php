@@ -111,7 +111,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             // @TODO use visit_exact()
             'bq' => sprintf("%s:'%s'"
                 , Target_Cloudsearch::FIELD_ENTITY
-                , strtr($entity->get_root()->get_name(), array("'" => "\\\'","\\" => "\\\\"))
+                , strtr($entity->get_root()->get_name(), array("'" => "\\\'",'\\' => '\\\\'))
             ),
             'return-fields' => Target_Cloudsearch::FIELD_PAYLOAD,
         );
@@ -487,7 +487,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         );
         return sprintf(" %s:'%s' "
                 , $column_name_renamed
-                , strtr($param, array("'" => "\\\'","\\" => "\\\\")
+                , strtr($param, array("'" => "\\'",'\\' => '\\\\')
         ));
     }
     
@@ -508,7 +508,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             $alias = $column_name;
         }
 
-        $search_string = strtr($param, array("'" => "\\\'",'\\' => '\\\\'));
+        $search_string = strtr($param, array("'" => "\\'",'\\' => '\\\\'));
         $search_terms = explode(' ', $search_string);
         $field_name = sprintf("%s%s%s"
             , $this->clean_field_name($entity->get_root()->get_name())

@@ -22,6 +22,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @const string
      */
     const VIEW_PAYLOAD = 'cloudsearch_payload';
+
     /**
      * VIEW_INDEXER 
      *
@@ -109,7 +110,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     {
         $query_parameters = array(
             // @TODO use visit_exact()
-            'bq' => sprintf("%s:'%s'"
+            'bq' => sprintf('%s:"%s"'
                 , Target_Cloudsearch::FIELD_ENTITY
                 , strtr($entity->get_root()->get_name(), array("'" => "\\\'",'\\' => '\\\\'))
             ),
@@ -143,31 +144,34 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k)) 
                 {
                     $tmp[] = sprintf('%s%s%s_%s'
-                    , $entity->get_root()->get_name()
-                    , Target_Cloudsearch::DELIMITER
-                    , $k
-                    , Target_Cloudsearch::ATTR_FACET_MAP
-                    );
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $k
+                            , Target_Cloudsearch::ATTR_FACET_MAP
+                            );
                 }
-                elseif ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k)) 
+                elseif (array_key_exists(sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
                 {
                     $tmp[] = sprintf('%s%s%s_%s'
-                    , $entity->get_root()->get_name()
-                    , Target_Cloudsearch::DELIMITER
-                    , $k
-                    , Target_Cloudsearch::ATTR_FACET
-                    );
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $k
+                            , Target_Cloudsearch::ATTR_FACET
+                            );
                 }
                 else
                 {
-                    $tmp[] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $k);
+                    $tmp[] = sprintf('%s%s%s'
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $k
+                            );
                 }
             }
         }
         $query_parameters['facet'] = implode(',', $tmp);
 
         $query_string = http_build_query($query_parameters);
-
 
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
@@ -485,10 +489,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
-        return sprintf(" %s:'%s' "
+        return sprintf(" %s:'%s'"
                 , $column_name_renamed
-                , strtr($param, array("'" => "\\'",'\\' => '\\\\')
-        ));
+                , strtr($param, array("'" => "\\'",'\\' => '\\\\'))
+        );
     }
     
     /**

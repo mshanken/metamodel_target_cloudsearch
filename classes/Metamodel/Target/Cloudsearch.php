@@ -588,6 +588,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 Selector::RANGE_MIN,
                 Selector::RANGE,
                 Selector::ISNULL,
+                Selector::DIST_RADIUS,
             );
         } 
         else if ($type instanceof Type_Date)

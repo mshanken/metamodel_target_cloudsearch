@@ -962,11 +962,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     private function visit_column_name($entity, $column_name)
     {
+        // look in standard index search fields
         if ($alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name))
         {
             return $alias;
         }
 
+        // look in facet mappings (generated at index time)
         if ($alias = strstr($column_name, '_'.Target_Cloudsearch::ATTR_FACET_MAP, true)) 
         {
             if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $alias))
@@ -975,6 +977,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }   
         }
 
+        // look for other facet fields 
         if ($alias = strstr($column_name, '_'.Target_Cloudsearch::ATTR_FACET, true)) 
         {
         
@@ -983,6 +986,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 return $column_name;
                 return $alias;  // strip _do_facet part
             }   
+        }
+
+        // UNIVERSAL_SEARCH_FIELD allowed by default
+        if ($column_name == Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD)
+        {
+            return Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD;
         }
 
         throw new HTTP_Exception_400(sprintf('Unknown selector field %s', $column_name));

@@ -385,7 +385,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @see type_transform()
      */
     // public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), $format_function = null)
-    public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), $format_function = null)
+    public function targetize_fields(Entity_Structure $parent, array $entity_name, array $fields = array(), callable $format_function = null)
     {
         if (is_null($format_function)) $format_function = array($this, 'type_transform_translate');
         $structure = $parent->get_children();
@@ -509,10 +509,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      *
      * @param column_name is true name
      */
-    public function visit_exact($entity, $column_name, $param, array $query) 
+    public function visit_exact($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $this->visit_column_name($entity, $column_name, $query);
+        $alias = $this->visit_column_name($entity, $column_name);
 
         if (array_key_exists($alias, $children))
         {
@@ -536,10 +536,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_search($entity, $column_name, array $query, $param) 
+    public function visit_search($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $this->visit_column_name($entity, $column_name, $query);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -629,7 +629,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 Selector::RANGE_MIN,
                 Selector::RANGE,
                 Selector::ISNULL,
-                Selector::DIST_RADIUS,
             );
         } 
         else if ($type instanceof Type_Date)
@@ -659,10 +658,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_max($entity, $column_name, array $query, $param) 
+    public function visit_max($entity, $column_name, $param) 
     { 
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $this->visit_column_name($entity, $column_name, $query);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -681,10 +680,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_min($entity, $column_name, array $query, $param) 
+    public function visit_min($entity, $column_name, $param) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $this->visit_column_name($entity, $column_name, $query);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $param = $this->type_transform($children[$alias], $param);
@@ -702,10 +701,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_range($entity, $column_name, array $query, $min, $max) 
+    public function visit_range($entity, $column_name, $min, $max) 
     {
         $children = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_children();
-        $alias = $this->visit_column_name($entity, $column_name, $query);
+        $alias = $this->visit_column_name($entity, $column_name);
         if (array_key_exists($alias, $children))
         {
             $min = $this->type_transform($children[$alias], $min);
@@ -725,7 +724,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_isnull($entity, $column_name, array $query) 
+    public function visit_isnull($entity, $column_name) 
     {
         return sprintf("(not (field %s%s%s '*'))"
             , $this->clean_field_name($entity->get_root()->get_name())
@@ -738,7 +737,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_and($entity, array $query) 
+    public function visit_operator_and($entity, array $parts) 
     {
         if(count($parts) > 0)
 //            return sprintf('(and %s)', implode(' ', $parts));
@@ -751,7 +750,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_or($entity, array $query) 
+    public function visit_operator_or($entity, array $parts) 
     {
         if(count($parts) > 0)
             return sprintf('(or %s)', implode(' ', $parts));
@@ -763,7 +762,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_not($entity, array $query, $part) 
+    public function visit_operator_not($entity, $part) 
     {
         return sprintf('(not %s)', $part);
     }
@@ -772,7 +771,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_page($entity, $query, $limit, $offset = 0) 
+    public function visit_page($entity, $limit, $offset = 0) 
     {
         return array($offset, $limit);
     }
@@ -781,13 +780,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_sort($entity, array $items, array $query) 
+    public function visit_sort($entity, array $items) 
     {
         $results = array();
         $i = 0;
-        foreach($items as $current)
+        foreach($items as list($column_name, $direction))
         {
-            list($column_name, $direction) = $current;
             $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
 
             $results[] = sprintf('%s%s%s%s'
@@ -801,12 +799,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         return implode(',', $results);
     }
     
-	public function visit_dist_radius($entity, $column_storage_name, array $query, $long, $lat, $radius) 
-    {
-        
-		
-    }
-	
     public function get_facets() 
     {
         return $this->facets;
@@ -1012,7 +1004,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * Helper for the visit_*() interface that builds WHERE clauses out of selectors.
      * Responsible for looking up an actual column name as it is seen by Postgres.
      */
-    private function visit_column_name($entity, $column_name, array $query)
+    private function visit_column_name($entity, $column_name)
     {
         // look in standard index search fields
         if ($alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name))

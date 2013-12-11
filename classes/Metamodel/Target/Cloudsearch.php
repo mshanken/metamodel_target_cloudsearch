@@ -52,6 +52,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     const ATTR_FACET_MAP = 'do_facet_map';
 
     /**
+     * ATTR_FACET_MAP 
+     *
+     * @const string
+     */
+    const ATTR_FACET_RANGE = 'do_facet_range';
+
+    /**
      * FIELD_PAYLOAD 
      *
      * @const string
@@ -136,32 +143,62 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
         }    
 
-        $tmp = array();
+        $facet_fields = array();
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $k => $v)
         {
             if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
             {
                 if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $k)) 
                 {
-                    $tmp[] = sprintf('%s%s%s_%s'
+                    $facet_fields[] = sprintf('%s%s%s_%s'
                             , $entity->get_root()->get_name()
                             , Target_Cloudsearch::DELIMITER
                             , $k
                             , Target_Cloudsearch::ATTR_FACET_MAP
                             );
                 }
-                elseif (array_key_exists(sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
+                else if ($ranges = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_RANGE, $k))
                 {
-                    $tmp[] = sprintf('%s%s%s_%s'
+                    $facet_fields_range = array();
+                    foreach ($ranges as $range)
+                    {
+                        $facet_fields_range[] = Target_Cloudsearch::parse_attr_facet_range($range);
+                    }
+
+                    if (!empty($facet_fields_range))
+                    {
+                        $query_parameters[sprintf('facet-%s%s%s-constraints'
+                                , $entity->get_root()->get_name()
+                                , Target_Cloudsearch::DELIMITER
+                                , $k
+                        )] = implode(',', $facet_fields_range);
+                    }
+
+                }
+                // fields cannot be both sortable and facetable, so we use the facet field here
+                else if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Selector::ATTR_SORTABLE, $k))
+                {
+                     $facet_fields[] = sprintf('%s%s%s_%s'
                             , $entity->get_root()->get_name()
                             , Target_Cloudsearch::DELIMITER
                             , $k
                             , Target_Cloudsearch::ATTR_FACET
                             );
                 }
+                /*
+                elseif (array_key_exists(sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
+                {
+                    $facet_fields[] = sprintf('%s%s%s_%s'
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $k
+                            , Target_Cloudsearch::ATTR_FACET
+                            );
+                }
+                */
                 else
                 {
-                    $tmp[] = sprintf('%s%s%s'
+                    $facet_fields[] = sprintf('%s%s%s'
                             , $entity->get_root()->get_name()
                             , Target_Cloudsearch::DELIMITER
                             , $k
@@ -169,7 +206,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 }
             }
         }
-        $query_parameters['facet'] = implode(',', $tmp);
+        $query_parameters['facet'] = implode(',', $facet_fields);
 
         $query_string = http_build_query($query_parameters);
 
@@ -947,6 +984,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             else if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $k))
             {
                 $selector->security->allow(
+                    sprintf('%s', $k)
+                    , array(
+                        Selector::EXACT
+                    )
+                );
+
+                $selector->security->allow(
                     sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET)
                     , array(
                         Selector::EXACT
@@ -995,5 +1039,34 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }
 
         throw new HTTP_Exception_400(sprintf('Unknown selector field %s', $column_name));
+    }
+
+    /**
+     * parse_attr_facet_range
+     *
+     * return a string representing the range in cloudsearch query format
+     *
+     * @param mixed $range
+     * @static
+     * @access public
+     * @return void
+     */
+    static public function parse_attr_facet_range($range)
+    {
+        if (array_key_exists('max', $range))
+        {
+            if (array_key_exists('min', $range))
+            {
+                return sprintf('%d..%d', $range['min'], $range['max']);
+            }
+            else
+            {
+                return sprintf('..%d', $range['max']);
+            }
+        }
+        else if (array_key_exists('min', $range))
+        {
+            return sprintf('%d..', $range['min']);
+        }
     }
 }

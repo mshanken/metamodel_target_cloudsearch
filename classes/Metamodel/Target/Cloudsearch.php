@@ -799,12 +799,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_not($entity, array $query) 
+    public function visit_operator_not($entity, $part, array $query) 
     {
         //return sprintf('(not %s)', $part);
         
-		//$query['WHERE'][] = sprintf('(not %s)', $part);
-		
+		$query['WHERE'][] = sprintf('(not %s)', $part);
+		/*
 		 $part = array();
 		 if(count($query['WHERE']) > 0)
 		 {
@@ -813,7 +813,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 			$query['WHERE_CLAUSE'][] = sprintf('(not %s)', $part);
 			
 		 }
-		 
+		 */
 		return $query;
 		
 		

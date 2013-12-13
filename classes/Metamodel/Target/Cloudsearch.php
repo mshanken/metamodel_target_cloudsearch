@@ -129,8 +129,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $query_parameters['rank'] = $rank;
             }
 
-            if ($page = $selector->build_target_page($entity, $this))
+            if ($query = $selector->build_target_page($entity, $this))
             {
+                $page = $query['LIMIT'];	
                 $query_parameters['start'] = $page[0];
                 $query_parameters['size'] = $page[1];
             }
@@ -489,10 +490,18 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
+		/*
         return sprintf(" %s:'%s'"
                 , $column_name_renamed
                 , strtr($param, array("'" => "\\'",'\\' => '\\\\'))
         );
+		 */
+		 $query['WHERE'][] = sprintf(" %s:'%s'"
+                , $column_name_renamed
+                , strtr($param, array("'" => "\\'",'\\' => '\\\\'))
+        );
+		
+		return $query;
     }
     
     /**
@@ -547,8 +556,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }
         
         $cloudsearch_string = implode(' ', $search_terms);
+		
+		$query['WHERE'][] = $cloudsearch_string;
+		
         
-        return $cloudsearch_string;
+        return $query;
 
     }
     
@@ -630,13 +642,22 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         {
             $param = $this->type_transform($children[$alias], $param);
         }
-
+		/*
         return sprintf('(filter %s%s%s ..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
             , $param
         );
+		*/
+		$query['WHERE'][] = sprintf('(filter %s%s%s ..%s)'
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($alias)
+            , $param
+        );
+		
+		return $query;
 
     }
     
@@ -652,13 +673,22 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         {
             $param = $this->type_transform($children[$alias], $param);
         }
-
+		/*
         return sprintf('(filter %s%s%s %s..)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
             , $param
         );
+		 */
+		 
+		 $query['WHERE'][] = sprintf('(filter %s%s%s %s..)'
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($alias)
+            , $param
+        );
+		return $query;
     }
     
     /**
@@ -674,7 +704,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             $min = $this->type_transform($children[$alias], $min);
             $max = $this->type_transform($children[$alias], $max);
         }
-
+		/*
         return sprintf('(filter %s%s%s %s..%s)'
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -682,6 +712,17 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , $min
             , $max
         );
+		 */
+		 
+		 $query['WHERE'][] = sprintf('(filter %s%s%s %s..%s)'
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($alias)
+            , $min
+            , $max
+        );
+		
+		return $query;
     }
     
     /**
@@ -690,11 +731,20 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_isnull($entity, $column_name, array $query) 
     {
+        /*
         return sprintf("(not (field %s%s%s '*'))"
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($column_name)
         );
+		 */
+		 $query['WHERE'][] = sprintf("(not (field %s%s%s '*'))"
+            , $this->clean_field_name($entity->get_root()->get_name())
+            , Target_Cloudsearch::DELIMITER
+            , $this->clean_field_name($column_name)
+        );
+		
+		return $query;
     }
     
     /**
@@ -703,11 +753,23 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_operator_and($entity, array $query) 
     {
-        if(count($parts) > 0)
+        /*if(count($parts) > 0)
 //            return sprintf('(and %s)', implode(' ', $parts));
             return implode(' ', $parts);
         else
             return NULL;
+		 */
+		 $parts = array();
+		 if(count($query['WHERE']) > 0)
+		 {
+		 	$parts = $query['WHERE'];
+			
+			if(count($query['WHERE']) > 1)
+		 	    $query['WHERE_CLAUSE'][] = implode(' ', $parts);
+            else
+                $query['WHERE_CLAUSE'][] = $parts;
+		 }
+		 return $query;
     }
     
     /**
@@ -716,19 +778,41 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_operator_or($entity, array $query) 
     {
+    	/*
         if(count($parts) > 0)
             return sprintf('(or %s)', implode(' ', $parts));
         else
             return NULL;
+		 */
+		 
+		 $parts = array();
+		 if(count($query['WHERE']) > 0)
+		 {
+		 	
+			$parts = $query['WHERE'];
+			$query['WHERE_CLAUSE'][] = sprintf('(or %s)', implode(' ', $parts));
+			
+		 }
+		 
+		 return $query;
+		 
     }
     
     /**
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_not($entity, array $query, $part) 
+    public function visit_operator_not($entity, array $query) 
     {
-        return sprintf('(not %s)', $part);
+        //return sprintf('(not %s)', $part);
+        if (count($query['WHERE']) > 1) throw new Exception ('selector operation not cannot accept multiple parts');
+        
+		$part = $query['WHERE'][0];
+		$query['WHERE_CLAUSE'][] = sprintf('(not %s)', $part);
+		
+		return $query;
+		
+		
     }
     
     /**
@@ -737,7 +821,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_page($entity, $query, $limit, $offset = 0) 
     {
-        return array($offset, $limit);
+        //return array($offset, $limit);
+		$query['LIMIT'] = array($offset, $limit);
+		
+		
+		return $query;
     }
     
     /**
@@ -750,7 +838,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $i = 0;
         foreach($items as $current)
         {
+            $alias = "";
+			//$current = explode(', ', $current);	
             list($column_name, $direction) = $current;
+			
+			
             $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
 
             $results[] = sprintf('%s%s%s%s'
@@ -761,7 +853,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             );
         }
         
-        return implode(',', $results);
+        //return implode(',', $results);
+        $query['SORT_BY']  = implode(',', $results);
+		
+		
+		return $query;
     }
     
 	public function visit_dist_radius($entity, $column_storage_name, array $query, $long, $lat, $radius) 

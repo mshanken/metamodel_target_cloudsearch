@@ -764,7 +764,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 		 {
 		 	$parts = $query['WHERE'];
 			
-		 	$query['WHERE_CLAUSE'][] = implode(' ', $parts);
+			if(count($query['WHERE']) > 1)
+		 	    $query['WHERE_CLAUSE'][] = implode(' ', $parts);
+            else
+                $query['WHERE_CLAUSE'][] = $parts;
 		 }
 		 return $query;
     }
@@ -799,21 +802,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_operator_not($entity, $part, array $query) 
+    public function visit_operator_not($entity, array $query) 
     {
         //return sprintf('(not %s)', $part);
+        if (count($query['WHERE']) > 1) throw new Exception ('selector operation not cannot accept multiple parts');
         
-		$query['WHERE'][] = sprintf('(not %s)', $part);
-		/*
-		 $part = array();
-		 if(count($query['WHERE']) > 0)
-		 {
-		 	
-			$part = $query['WHERE'][0];
-			$query['WHERE_CLAUSE'][] = sprintf('(not %s)', $part);
-			
-		 }
-		 */
+		$part = $query['WHERE'][0];
+		$query['WHERE_CLAUSE'][] = sprintf('(not %s)', $part);
+		
 		return $query;
 		
 		

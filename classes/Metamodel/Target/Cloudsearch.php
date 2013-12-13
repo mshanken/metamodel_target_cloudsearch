@@ -839,8 +839,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         foreach($items as $current)
         {
             $alias = "";
-			$current = explode(', ', $current);	
+			//$current = explode(', ', $current);	
             list($column_name, $direction) = $current;
+			
 			
             $alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($column_name);
 

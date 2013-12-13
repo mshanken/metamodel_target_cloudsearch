@@ -108,6 +108,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function select(Entity_Row $entity, Selector $selector = null)
     {
+        $query = array();	
         $query_parameters = array(
             // @TODO use visit_exact()
             'bq' => sprintf('%s:"%s"'
@@ -119,17 +120,23 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         if ($selector instanceof Selector)
         {
-            if ($select_query = $selector->build_target_query($entity, $this))
+            if ($query = $selector->build_target_query($entity, $this, $query))
             {
-                $query_parameters['bq'] = sprintf("(and %s %s)", $query_parameters['bq'], $select_query);
+                $where = '';	
+                if(is_array($query['WHERE_CLAUSE']))
+				{	
+	                $where = implode(', ', $query['WHERE_CLAUSE']);	
+				}		
+                $query_parameters['bq'] = sprintf("(and %s %s)", $query_parameters['bq'], $where);
             }
 
-            if ($rank = $selector->build_target_sort($entity, $this))
+            if ($query = $selector->build_target_sort($entity, $this, $query))
             {
+                $rank = $query[SORT_BY];
                 $query_parameters['rank'] = $rank;
             }
 
-            if ($query = $selector->build_target_page($entity, $this))
+            if ($query = $selector->build_target_page($entity, $this, $query))
             {
                 $page = $query['LIMIT'];	
                 $query_parameters['start'] = $page[0];

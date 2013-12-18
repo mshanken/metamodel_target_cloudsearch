@@ -184,14 +184,22 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
                 }
                 // fields cannot be both sortable and facetable, so we use the facet field here
-                else if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Selector::ATTR_SORTABLE, $k))
+                else if ($entity[Selector::VIEW_SELECTOR]
+                        ->get_attribute(
+                            Selector::ATTR_SORTABLE
+                            , $entity[Selector::VIEW_SELECTOR]
+                                ->lookup_entanglement_name(
+                                    $entity[Target_Cloudsearch::VIEW_INDEXER]
+                                        ->get_entanglement_name($k)
+                                )
+                        ))
                 {
-                     $facet_fields[] = sprintf('%s%s%s_%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $k
-                            , Target_Cloudsearch::ATTR_FACET
-                            );
+                    $facet_fields[] = sprintf('%s%s%s_%s'
+                        , $entity->get_root()->get_name()
+                        , Target_Cloudsearch::DELIMITER
+                        , $k
+                        , Target_Cloudsearch::ATTR_FACET
+                    );
                 }
                 /*
                 elseif (array_key_exists(sprintf('%s_%s', $k, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
@@ -793,70 +801,44 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     
     /**
      * satisfy selector visitor interface
+     * @TODO remove unused $entity param
      *
      */
     public function visit_operator_and($entity, array $query) 
     {
-        /*if(count($parts) > 0)
-//            return sprintf('(and %s)', implode(' ', $parts));
-            return implode(' ', $parts);
-        else
-            return NULL;
-         */
-         $parts = array();
-         if(count($query['WHERE']) > 0)
+         if (count($query['WHERE']) > 0)
          {
-             $parts = $query['WHERE'];
-            
-            if(count($query['WHERE']) > 1)
-                 $query['WHERE_CLAUSE'][] = implode(' ', $parts);
-            else
-                $query['WHERE_CLAUSE'][] = $parts;
+             $query['WHERE_CLAUSE'][] = implode(' ', $query['WHERE']);
          }
          return $query;
     }
     
     /**
      * satisfy selector visitor interface
+     * @TODO remove unused $entity param
      *
      */
     public function visit_operator_or($entity, array $query) 
     {
-        /*
-        if(count($parts) > 0)
-            return sprintf('(or %s)', implode(' ', $parts));
-        else
-            return NULL;
-         */
-         
-         $parts = array();
          if(count($query['WHERE']) > 0)
          {
-             
-            $parts = $query['WHERE'];
-            $query['WHERE_CLAUSE'][] = sprintf('(or %s)', implode(' ', $parts));
-            
+            $query['WHERE_CLAUSE'][] = sprintf('(or %s)', implode(' ', $query['WHERE']));
          }
          
          return $query;
-         
     }
     
     /**
      * satisfy selector visitor interface
+     * @TODO remove unused $entity param
      *
      */
     public function visit_operator_not($entity, array $query) 
     {
-        //return sprintf('(not %s)', $part);
         if (count($query['WHERE']) > 1) throw new Exception ('selector operation not cannot accept multiple parts');
-        
-        $part = $query['WHERE'][0];
-        $query['WHERE_CLAUSE'][] = sprintf('(not %s)', $part);
+        $query['WHERE_CLAUSE'][] = sprintf('(not %s)', $query['WHERE'][0]);
         
         return $query;
-        
-        
     }
     
     /**
@@ -865,10 +847,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_page($entity, $query, $limit, $offset = 0) 
     {
-        //return array($offset, $limit);
         $query['LIMIT'] = array($offset, $limit);
-        
-        
         return $query;
     }
     

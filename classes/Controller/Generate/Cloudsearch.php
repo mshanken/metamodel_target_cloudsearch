@@ -251,7 +251,11 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         {
             if (count($type) > 1) 
             {
-                return $this->literal_field($field_name, false, false, true);
+                return $this->literal_field($field_name
+                    , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+                    , false
+                    , true
+                );
             }
             $parent = $type;
             $tmp = $type->get_children();

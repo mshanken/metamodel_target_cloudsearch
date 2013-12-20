@@ -408,8 +408,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         foreach ($structure as $alias => $type)
         {
 
-//echo "\n ___ ".implode('@',$entity_name)."  $alias __ ". get_class($type);
-
             $entity = array_shift($entity_name);
             $entity_name[] = $this->clean_field_name($alias);
             $field_name = sprintf('%s%s%s'
@@ -439,7 +437,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $entity_path = $entity_name;
                 $entity_path[] = $alias;
                 $fields = $this->targetize_fields($type, $entity_path, $fields, $format_function);
-            
             }
 
             else if ($type instanceof Entity_Array_Pivot || $type instanceof Entity_Array_Simple)

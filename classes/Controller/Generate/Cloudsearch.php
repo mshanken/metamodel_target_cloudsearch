@@ -55,10 +55,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      * The value of a literal field can be returned in search results or the field can be used as a facet, but not both. 
      * but not both!
      * BUT NOT BOTH!
+     * if both $facet and $result is true we create an additional facet field
      *
      * By default, literal fields are not search-enabled, result-enabled, or facet-enabled. 
      *
-     * if both facet is required we use a non-stemming text field
      */
     protected function literal_field($name, $facet = false, $result = false, $search = true, $default = null) 
     {
@@ -272,6 +272,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         }
 
         // Pivot children
+        /*
         if ($type instanceof Entity_Columnset_Join)
         {
             if (count($type) > 1) 
@@ -283,6 +284,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         );
             }
         }
+        */
 
         if ($parent->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))
         {

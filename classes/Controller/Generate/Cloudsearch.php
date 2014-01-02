@@ -3,8 +3,6 @@
 class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 {
 
-    private $info = null;
-
     protected function source_map($field, $view)
     {   
         $field_name = $field['IndexFieldName'];
@@ -16,15 +14,15 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         if ($map = $view->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $column_name)) 
         {
             $field = $this->literal_field($map_field_name, true, false, false);
-        
+
             $field[$map_field_name]['SourceAttributes'][] = array(
-                'SourceDataFunction' => 'Map',
-                'SourceDataMap' => array (
-                    'Cases' => $map['cases'],
-                    'DefaultValue' => $map['default'],
-                    'SourceName' => $field_name,
-                ),
-            );
+                    'SourceDataFunction' => 'Map',
+                    'SourceDataMap' => array (
+                        'Cases' => $map['cases'],
+                        'DefaultValue' => $map['default'],
+                        'SourceName' => $field_name,
+                        ),
+                    );
             return $field;
         }
 
@@ -41,11 +39,11 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             foreach ($sources as $s)
             {
                 $field['SourceAttributes'][] = array (
-                    'SourceDataFunction' => 'Copy',
-                    'SourceDataCopy' => array (
-                        'SourceName' => $s,
-                    ),
-                );
+                        'SourceDataFunction' => 'Copy',
+                        'SourceDataCopy' => array (
+                            'SourceName' => $s,
+                            ),
+                        );
             }
         }
         return $field;
@@ -57,10 +55,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      * The value of a literal field can be returned in search results or the field can be used as a facet, but not both. 
      * but not both!
      * BUT NOT BOTH!
+     * if both $facet and $result is true we create an additional facet field
      *
      * By default, literal fields are not search-enabled, result-enabled, or facet-enabled. 
      *
-     * if both facet is required we use a non-stemming text field
      */
     protected function literal_field($name, $facet = false, $result = false, $search = true, $default = null) 
     {
@@ -77,14 +75,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         }
 
         $field = array (
-            'IndexFieldName' => $name,
-            'IndexFieldType' => 'literal',
-            'LiteralOptions' => array (
-                'SearchEnabled' => $search, 
-                'FacetEnabled'  => $facet,
-                'ResultEnabled' => $result,
-            ),
-        );
+                'IndexFieldName' => $name,
+                'IndexFieldType' => 'literal',
+                'LiteralOptions' => array (
+                    'SearchEnabled' => $search, 
+                    'FacetEnabled'  => $facet,
+                    'ResultEnabled' => $result,
+                    ),
+                );
         if (!is_null($default)) $field['LiteralOptions']['DefaultValue'] = $default;
 
         $ret[$name] = $field;
@@ -112,19 +110,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         }
 
         $field = array (
-            'IndexFieldName' => $name,
-            'IndexFieldType' => 'text',
-            'TextOptions' => array (
-                'FacetEnabled'  => $facet,
-                'ResultEnabled' => $result,
-            ),
-        );
-        
+                'IndexFieldName' => $name,
+                'IndexFieldType' => 'text',
+                'TextOptions' => array (
+                    'FacetEnabled'  => $facet,
+                    'ResultEnabled' => $result,
+                    ),
+                );
+
         if (!$stemming) $field['TextOptions']['TextProcessor'] = 'cs_text_no_stemming';
         if (!is_null($default)) $field['TextOptions']['DefaultValue'] = $default;
-        
+
         $ret[$name] = $field;    
-    
+
         return $ret;
     }
 
@@ -137,10 +135,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
     protected function uint_field($name, $default = null)
     {
         $field = array (
-            'IndexFieldName' => $name,
-            'IndexFieldType' => 'uint',
-            'UIntOptions' => array (),
-        );
+                'IndexFieldName' => $name,
+                'IndexFieldType' => 'uint',
+                'UIntOptions' => array (),
+                );
 
         if (!is_null($default)) $field['UintOptions']['DefaultValue'] = $default;
 
@@ -163,8 +161,8 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         $entities = array_keys($this->class_methods($files));
         $domain_name = $this->request->param('domain');
         $domain = array(
-            $domain_name => array(),
-        );
+                $domain_name => array(),
+                );
 
         foreach($entities as $entity_class_name) 
         {
@@ -177,13 +175,13 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 }
             }
         }
-        
+
         $domain[$domain_name] += $this->literal_field(Target_Cloudsearch::FIELD_PAYLOAD, false, true, false);   // only return
         $domain[$domain_name] += $this->literal_field(Target_Cloudsearch::FIELD_ENTITY, false, false, true);    // only search
-        
+
         $this->response->body(json_encode($domain));
     }
-    
+
     /**
      * create cloudsearch domain definition for a single entity
      */
@@ -193,7 +191,7 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         $field_definitions = array();
 
         $entity_name = $this->clean_field_name($entity->get_root()->get_name());
-        
+
         foreach (array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view)
         {
             $field_definitions = $cs->targetize_fields($entity[$view], array($entity_name), $field_definitions, array($this,'type_transform'));
@@ -208,10 +206,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
         // general search field
         $universal_field = sprintf('%s%s%s'
-            , $entity_name
-            , Target_Cloudsearch::DELIMITER
-            , Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD
-        );
+                , $entity_name
+                , Target_Cloudsearch::DELIMITER
+                , Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD
+                );
 
         $copy = array();
         foreach ($field_definitions as $k => $v)
@@ -235,33 +233,25 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 
 
     /**
-     * field definition based on type and attributes 
+     * type_transform
      *
+     * field definition based on type and attributes 
      * callback for Target_Cloudsearch::targetize_fields
      *
      * NOTE: normally $parent[$alias] = $type however array_pivots cannot be routed this way,
      * so we require that all three are passed in.
      *
+     * @param Entity_Structure $parent
+     * @param mixed $type
+     * @param mixed $alias
+     * @param mixed $value
+     * @param mixed $fields
+     * @param mixed $field_name
+     * @access public
+     * @return void
      */
     public function type_transform(Entity_Structure $parent, $type, $alias, $value, $fields, $field_name)
     {
-
-        // Pivot children
-        if ($type instanceof Entity_Columnset_Join)
-        {
-            if (count($type) > 1) 
-            {
-                return $this->literal_field($field_name
-                    , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-                    , false
-                    , true
-                );
-            }
-            $parent = $type;
-            $tmp = $type->get_children();
-            $type = array_shift($tmp);
-        }
-
         // @TODO bools should be in too ?
 
         if ($type instanceof Type_Date || $type instanceof Type_Number)
@@ -269,17 +259,54 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             // var_export($this->uint_field($field_name));
             return $this->uint_field($field_name);
         }
-    
+
+        // defer to selector view for sortable flags
+        $selector_view_alias = false;
+        if ($entanglement_name = $parent->get_entanglement_name($alias))
+        {
+            $entity = $parent->get_root();
+            do {
+                $entity = $entity->get_root();
+            } while (!($entity instanceof Entity_Root));
+            $selector_view_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entanglement_name);
+        }
+
+        // Pivot children
+        /*
+        if ($type instanceof Entity_Columnset_Join)
+        {
+            if (count($type) > 1) 
+            {
+                return $this->literal_field($field_name
+                        , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+                        , $entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_view_alias)
+                        , true
+                        );
+            }
+        }
+        */
+
         if ($parent->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))
         {
-            return $this->text_field($field_name
-                , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-                , $parent->get_attribute(Selector::ATTR_SORTABLE, $alias)
-            );
+            if ($selector_view_alias !== false)
+            {
+                return $this->text_field($field_name
+                    , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+                    , $entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_view_alias)
+                );
+            }
+            else // the case where not found in selector_view 
+            {
+                return $this->text_field($field_name
+                    , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
+                    , false
+                );
+            }
         }
+
         return $this->literal_field($field_name
             , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-            , $parent->get_attribute(Selector::ATTR_SORTABLE, $alias)
+            , $entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_view_alias)
             , true
         );
     }

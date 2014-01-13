@@ -537,10 +537,15 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         if ($view[$alias] instanceof Entity_Array)
         {
-            $query['WHERE'][] = sprintf(" %s:'%s'"
+//            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
+            
+            foreach ($search_value as $search_curr)
+            {
+                $query['WHERE'][] = sprintf(" %s:'%s'"
                     , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+                    , strtr($search_curr, array("'" => "\\'",'\\' => '\\\\'))
                     );
+            }
         }
         else
         {
@@ -1121,6 +1126,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     {
         if (array_key_exists($alias, $view))
         {
+            if ($view[$alias] instanceof Entity_Array)
+            {
+                return $view[$alias]->to_array();
+            }
             return $view[$alias];
         }
         return $default;

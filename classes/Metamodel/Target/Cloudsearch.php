@@ -151,7 +151,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }    
                             
         $facet_fields = array();
-        foreach (array_keys($entity[Target_Cloudsearch::VIEW_INDEXER]) as $key)
+        // $value is not used.  
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
         {
             $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
             $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);
@@ -536,10 +537,15 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         if ($view[$alias] instanceof Entity_Array)
         {
-            $query['WHERE'][] = sprintf(" %s:'%s'"
+//            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
+            
+            foreach ($search_value as $search_curr)
+            {
+                $query['WHERE'][] = sprintf(" %s:'%s'"
                     , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+                    , strtr($search_curr, array("'" => "\\'",'\\' => '\\\\'))
                     );
+            }
         }
         else
         {
@@ -1120,6 +1126,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     {
         if (array_key_exists($alias, $view))
         {
+            if ($view[$alias] instanceof Entity_Array)
+            {
+                return $view[$alias]->to_array();
+            }
             return $view[$alias];
         }
         return $default;

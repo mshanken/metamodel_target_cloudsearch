@@ -151,7 +151,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }    
                             
         $facet_fields = array();
-        foreach (array_keys($entity[Target_Cloudsearch::VIEW_INDEXER]) as $key)
+        // $value is not used.  
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
         {
             $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
             $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);

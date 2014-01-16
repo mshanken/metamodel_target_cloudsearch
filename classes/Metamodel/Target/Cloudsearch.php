@@ -529,16 +529,23 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_exact(Entity_Columnset_Iterator $view, $alias, $search_value, array $query) 
     {
+        // if we a facet field exists use that for exact instead...
+        $better_alias = $alias;
+        if ($view->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias) &&
+            $view->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))
+        {
+            $better_alias = sprintf('%s_%s', $alias, Target_Cloudsearch::ATTR_FACET);
+        }
+
         $column_name_renamed = sprintf('%s%s%s'
                 , $this->clean_field_name($view->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
-                , $this->clean_field_name($alias)
+                , $this->clean_field_name($better_alias)
                 );
 
         if ($view[$alias] instanceof Entity_Array)
         {
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
-            
             foreach ($search_value as $search_curr)
             {
                 $query['WHERE'][] = sprintf(" %s:'%s'"
@@ -1065,6 +1072,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 return array($view_name, $alias);
             }
         }
+        
 
         $view_name = Target_Cloudsearch::VIEW_INDEXER;
         // look in facet mappings (generated at index time)
@@ -1082,6 +1090,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             if ($entity[$view_name]->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias))
             {
                 return array($view_name, $alias);
+                //return array($view_name, $entanglement_name);
             }   
         }
 
@@ -1122,15 +1131,34 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }
     }
 
+    /**
+     * lookup_entanglement_data
+     *
+     * @param Entity_Columnset_Iterator $view
+     * @param mixed $alias
+     * @param mixed $default
+     * @access public
+     * @return void
+     */
     public function lookup_entanglement_data(Entity_Columnset_Iterator $view, $alias, $default)
     {
         if (array_key_exists($alias, $view))
         {
             if ($view[$alias] instanceof Entity_Array)
             {
-                return $view[$alias]->to_array();
+                $ret = $view[$alias]->to_array();
+                if (empty($ret))
+                {
+                    return array($default);
+                }
+                return $ret;
             }
-            return $view[$alias];
+            $ret = $view[$alias];
+        }
+
+        if (!empty($ret))
+        {
+            return $ret;
         }
         return $default;
     }

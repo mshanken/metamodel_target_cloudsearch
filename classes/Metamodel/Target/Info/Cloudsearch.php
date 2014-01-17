@@ -15,44 +15,52 @@
  * @subpackage Target_Info
  * @author dchan@mshanken.com
  */
-Class Metamodel_Target_Info_Cloudsearch
-extends Target_Info
+class Metamodel_Target_Info_Cloudsearch extends Target_Info
 {
+    /**
+     * entity_name 
+     *
+     * @var mixed
+     * @access private
+     */
     private $entity_name = NULL;
-    private $field_types = array();
-    private $facet_constraints = array();
     
+    /**
+     * field_types 
+     *
+     * @var array
+     * @access private
+     */
+    private $field_types = array();
+
+    /**
+     * facet_maps 
+     *
+     * @var array
+     * @access private
+     */
+    private $facet_maps = array();
+    
+    /**
+     * Constructor
+     *
+     * @access public
+     */
     public function __construct() 
     {
     }
     
-    // textual ?
-    public function set_numeric($field_name) {
-        $this->field_types[$field_name] = 'numeric';
-    }
-    
-    public function is_numeric($field_name) {
-        return array_key_exists($field_name, $this->field_types)
-               && ($this->field_types[$field_name] == 'numeric');
-    }
-    
-
-    // handle bracket facets
-    public function get_facet_constraints()
-    {
-        return $this->facet_constraints;
-    }
-
-    public function set_facet_constraints($field, array $constraints)
-    {
-        $this->facet_constraints[$field] = $constraints;
-    }
-
-    // @TODO
+    /**
+     * validate
+     *
+     * @param Entity_Root $root
+     * @access public
+     * @return void
+     */
     public function validate(Entity_Root $root)
     {
+        if (!($root instanceof Target_Cloudsearchable)) return false;
         if(!($root[Target_Cloudsearch::VIEW_PAYLOAD] instanceof Entity_Columnset)) return false;
-        if(!($root[Target_Cloudsearch::VIEW_FACETS] instanceof Entity_Columnset)) return false;
         if(!($root[Target_Cloudsearch::VIEW_INDEXER] instanceof Entity_Columnset)) return false;
         
         return true;

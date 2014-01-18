@@ -543,7 +543,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 , $this->clean_field_name($better_alias)
                 );
 
-        if ($view[$alias] instanceof Entity_Array)
+        $children = $view->get_children();
+        if ($children[$alias] instanceof Entity_Array)
         {
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
             foreach ($search_value as $search_curr)
@@ -553,6 +554,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     , strtr($search_curr, array("'" => "\\'",'\\' => '\\\\'))
                     );
             }
+        }
+        else if ($children[$alias] instanceof Type_Number)
+        {
+            $query['WHERE'][] = sprintf(" %s:%s"
+                    , $column_name_renamed
+                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+                    );
         }
         else
         {

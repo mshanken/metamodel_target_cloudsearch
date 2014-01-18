@@ -1067,7 +1067,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         foreach (array(Target_Cloudsearch::VIEW_INDEXER, Entity_Root::VIEW_TS, Entity_Root::VIEW_KEY) as $view_name)
         {
             // look in standard index search fields
-            if ($alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($entanglement_name))
+            if ($alias = $entity[$view_name]->lookup_entanglement_name($entanglement_name))
             {
                 return array($view_name, $alias);
             }

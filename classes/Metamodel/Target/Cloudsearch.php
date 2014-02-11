@@ -891,6 +891,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $memcache = new Memcache;
         $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
+
         $memcache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
         
         if (!$this->domain_description)
@@ -905,19 +906,20 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     
                 $aws = Aws::factory($config);
                 $cloudsearch = $aws->get('CloudSearch');
+                /*
                 $response = $cloudsearch->describeDomains(array('DomainNames' => array($csdomain)));
                 if (!count($response))
                 {
                     echo json_encode($response->body) . "\n";
                     throw new Exception("No domain named " . $csdomain);
                 }
+                */
     
-                foreach ($cloudsearch->getDescribeDomainsIterator() as $d)
+                foreach ($cloudsearch->getDescribeDomainsIterator(array('DomainNames' => array($csdomain))) as $d)
                 {
                     $this->domain_description = array();
                     if (array_key_exists('SearchService',$d)) $this->domain_description['SearchService'] = $d['SearchService'];
                     if (array_key_exists('DocService',$d)) $this->domain_description['DocService'] = $d['DocService'];
-
                     break;
                 }
 

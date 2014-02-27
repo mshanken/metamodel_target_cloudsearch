@@ -794,7 +794,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function get_domain_description() 
     {
         $memcache = new Memcache;
-        $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
+        $memcache->connect(Kohana::$config->load('memcache.cache_host')
+                , Kohana::$config->load('memcache.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
 
         $memcache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
@@ -838,7 +839,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     && array_key_exists('Endpoint',$this->domain_description['DocService'])
                 )
                 {
-                    $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+                    $cache_ttl = Kohana::$config->load('memcache.cache_ttl');
                     $memcache->set($memcache_key, $this->domain_description, false, $cache_ttl);
                 }
             }

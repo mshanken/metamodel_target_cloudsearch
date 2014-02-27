@@ -304,9 +304,14 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
             }
         }
 
+        $result_enabled = (
+                $entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_view_alias)
+                || $parent->get_name() == Entity_Root::VIEW_KEY 
+        );
+
         return $this->literal_field($field_name
             , $parent->get_attribute(Target_Cloudsearch::ATTR_FACET, $alias)
-            , $entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_view_alias)
+            , $result_enabled
             , true
         );
     }

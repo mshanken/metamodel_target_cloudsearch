@@ -653,6 +653,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 // @TODO if FREETEXT, dont allow  Exact
                 Selector::EXACT,
                 Selector::ISNULL,
+                Selector::DIST_RADIUS,
             );
         }
         
@@ -821,7 +822,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access public
      * @return void
      */
-    public function visit_dist_radius($entity, $column_storage_name, array $query, $long, $lat, $radius) 
+    public function visit_dist_radius(Entity_Columnset_Iterator $view, $column_storage_name, array $query, $long, $lat, $radius) 
     {
         throw new Exception('not implemented');
         // @TODO    

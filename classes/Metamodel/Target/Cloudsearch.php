@@ -775,7 +775,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_page(array $query, $limit, $offset = 0) 
+    public function visit_page($limit, $offset = 0, array $query) 
     {
         $query['LIMIT'] = array($offset, $limit);
         return $query;

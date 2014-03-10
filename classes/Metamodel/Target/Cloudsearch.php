@@ -579,6 +579,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_search(Entity_Columnset_Iterator $entity, $alias, $search_value, array $query) 
     {
+        $children = $entity->get_children();
+        if ($children[$alias] instanceof Type_Int)
+        {
+            return $this->visit_exact($entity, $alias, $search_value, $query);
+        }
+
+
         $field_name = sprintf("%s%s%s"
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -653,6 +660,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 // @TODO if FREETEXT, dont allow  Exact
                 Selector::EXACT,
                 Selector::ISNULL,
+                Selector::DIST_RADIUS,
             );
         }
         
@@ -666,6 +674,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_max(Entity_Columnset_Iterator $view, $alias, $search_value, array $query) 
     { 
+        if (empty($search_value)) $search_value = 0;
         $query['WHERE'][] = sprintf('(filter %s%s%s ..%s)'
             , $this->clean_field_name($view->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -683,6 +692,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_min(Entity_Columnset_Iterator $view, $alias, $search_value, array $query) 
     {
+        if (empty($search_value)) $search_value = 0;
         $query['WHERE'][] = sprintf('(filter %s%s%s %s..)'
                 , $this->clean_field_name($view->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
@@ -774,7 +784,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_page(array $query, $limit, $offset = 0) 
+    public function visit_page($limit, $offset = 0, array $query) 
     {
         $query['LIMIT'] = array($offset, $limit);
         return $query;
@@ -821,7 +831,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access public
      * @return void
      */
-    public function visit_dist_radius($entity, $column_storage_name, array $query, $long, $lat, $radius) 
+    public function visit_dist_radius(Entity_Columnset_Iterator $view, $column_storage_name, array $query, $long, $lat, $radius) 
     {
         throw new Exception('not implemented');
         // @TODO    

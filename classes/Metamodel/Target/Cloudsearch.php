@@ -219,7 +219,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
         }
         $query_parameters['facet'] = implode(',', $facet_fields);
-
         $query_string = http_build_query($query_parameters);
 
         // calls curl to aws
@@ -580,7 +579,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function visit_search(Entity_Columnset_Iterator $entity, $alias, $search_value, array $query) 
     {
         $children = $entity->get_children();
-        if ($children[$alias] instanceof Type_Int)
+        if (array_key_exists($alias, $children) && $children[$alias] instanceof Type_Int)
         {
             return $this->visit_exact($entity, $alias, $search_value, $query);
         }

@@ -219,6 +219,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
         }
         $query_parameters['facet'] = implode(',', $facet_fields);
+//echo $query_parameters['bq'];
         $query_string = http_build_query($query_parameters);
 
         // calls curl to aws
@@ -584,41 +585,32 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             return $this->visit_exact($entity, $alias, $search_value, $query);
         }
 
-
         $field_name = sprintf("%s%s%s"
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
         $search_terms = explode(' ', $search_value);
+        $clean_terms = array();
         
         // Build search query with wildcard and exact for each word in string
-        for ($i=0; $i<count($search_terms); $i++)
+//        for ($i=0; $i<count($search_terms); $i++)
+        foreach ($search_terms as $search_term)
         {
-            $search_term = $search_terms[$i];
-            $temporary = "";
-            for($j = 0; $j < strlen($search_term); $j++)
-            {
-                if(preg_match('/^[a-zA-Z0-9]$/', $search_term[$j]))
-                {
-                    $temporary .= $search_term[$j];
-                }
-                else if($search_term[$j] == '\'')
-                {
-                    $temporary .= '\\\'';
-                }
-            }
-            $search_term = $temporary;
+            $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
             
-            $search_terms[$i] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
-                $field_name,
-                $search_term,
-                $field_name,
-                $search_term
-            );
+            if (strlen($search_term) > 2)
+            {
+                $clean_terms[] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
+                    $field_name,
+                    $search_term,
+                    $field_name,
+                    $search_term
+                );
+            } 
         }
         
-        $cloudsearch_string = implode(' ', $search_terms);
+        $cloudsearch_string = implode(' ', $clean_terms);
         
         $query['WHERE'][] = $cloudsearch_string;
         

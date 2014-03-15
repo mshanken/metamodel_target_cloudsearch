@@ -597,9 +597,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 //        for ($i=0; $i<count($search_terms); $i++)
         foreach ($search_terms as $search_term)
         {
-            $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
+            // $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
             
-            if (strlen($search_term) > 2)
+            if (strlen($search_term) > 1)
             {
                 $clean_terms[] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
                     $field_name,

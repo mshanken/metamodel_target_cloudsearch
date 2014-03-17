@@ -558,16 +558,16 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         else if ($children[$alias] instanceof Type_Number)
         {
             $query['WHERE'][] = sprintf(" %s:%s"
-                    , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
-                    );
+                , $column_name_renamed
+                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+            );
         }
         else
         {
             $query['WHERE'][] = sprintf(" %s:'%s'"
-                    , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
-                    );
+                , $column_name_renamed
+                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+            );
         }
 
         return $query;
@@ -607,6 +607,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
             else if (strlen($search_term) > 1)
             {
+                $search_term = Parse::deaccent($search_term);
                 $clean_terms[] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
                     $field_name,
                     $search_term,

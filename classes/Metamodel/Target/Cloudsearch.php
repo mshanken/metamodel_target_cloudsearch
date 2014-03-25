@@ -118,7 +118,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $query = $this->select_helper_query_build($entity, $selector);
         $query_string = http_build_query($query);
 
-
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
@@ -463,16 +462,16 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         else if ($children[$alias] instanceof Type_Number)
         {
             $query['WHERE'][] = sprintf(" %s:%s"
-                    , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
-                    );
+                , $column_name_renamed
+                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+            );
         }
         else
         {
             $query['WHERE'][] = sprintf(" %s:'%s'"
-                    , $column_name_renamed
-                    , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
-                    );
+                , $column_name_renamed
+                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+            );
         }
 
         return $query;
@@ -484,40 +483,45 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_search(Entity_Columnset_Iterator $entity, $alias, $search_value, array $query) 
     {
+        $children = $entity->get_children();
+        if (array_key_exists($alias, $children) && $children[$alias] instanceof Type_Int)
+        {
+            return $this->visit_exact($entity, $alias, $search_value, $query);
+        }
+
         $field_name = sprintf("%s%s%s"
             , $this->clean_field_name($entity->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
         $search_terms = explode(' ', $search_value);
+        $clean_terms = array();
         
         // Build search query with wildcard and exact for each word in string
-        for ($i=0; $i<count($search_terms); $i++)
+//        for ($i=0; $i<count($search_terms); $i++)
+        foreach ($search_terms as $search_term)
         {
-            $search_term = $search_terms[$i];
-            $temporary = "";
-            for($j = 0; $j < strlen($search_term); $j++)
+            // $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
+            if ( is_numeric($search_term))
             {
-                if(preg_match('/^[a-zA-Z0-9]$/', $search_term[$j]))
-                {
-                    $temporary .= $search_term[$j];
-                }
-                else if($search_term[$j] == '\'')
-                {
-                    $temporary .= '\\\'';
-                }
+                 $clean_terms[] = sprintf("(field %s '%s')",
+                    $field_name,
+                    $search_term
+                );
             }
-            $search_term = $temporary;
-            
-            $search_terms[$i] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
-                $field_name,
-                $search_term,
-                $field_name,
-                $search_term
-            );
+            else if (strlen($search_term) > 1)
+            {
+                $search_term = Parse::deaccent($search_term);
+                $clean_terms[] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
+                    $field_name,
+                    $search_term,
+                    $field_name,
+                    $search_term
+                );
+            } 
         }
         
-        $cloudsearch_string = implode(' ', $search_terms);
+        $cloudsearch_string = implode(' ', $clean_terms);
         
         $query['WHERE'][] = $cloudsearch_string;
         
@@ -558,6 +562,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 // @TODO if FREETEXT, dont allow  Exact
                 Selector::EXACT,
                 Selector::ISNULL,
+                Selector::DIST_RADIUS,
             );
         }
         
@@ -571,6 +576,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_max(Entity_Columnset_Iterator $view, $alias, $search_value, array $query) 
     { 
+        if (empty($search_value)) $search_value = 0;
         $query['WHERE'][] = sprintf('(filter %s%s%s ..%s)'
             , $this->clean_field_name($view->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
@@ -588,6 +594,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function visit_min(Entity_Columnset_Iterator $view, $alias, $search_value, array $query) 
     {
+        if (empty($search_value)) $search_value = 0;
         $query['WHERE'][] = sprintf('(filter %s%s%s %s..)'
                 , $this->clean_field_name($view->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
@@ -679,7 +686,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * satisfy selector visitor interface
      *
      */
-    public function visit_page(array $query, $limit, $offset = 0) 
+    public function visit_page($limit, $offset = 0, array $query) 
     {
         $query['LIMIT'] = array($offset, $limit);
         return $query;
@@ -726,7 +733,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access public
      * @return void
      */
-    public function visit_dist_radius($entity, $column_storage_name, array $query, $long, $lat, $radius) 
+    public function visit_dist_radius(Entity_Columnset_Iterator $view, $column_storage_name, array $query, $long, $lat, $radius) 
     {
         throw new Exception('not implemented');
         // @TODO    
@@ -1145,7 +1152,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     protected function select_helper_query_return($entity)
     {
-        return array(Target_Cloudsearch::FIELD_PAYLOAD);
+        return array_keys($entity[Entity_Root::VIEW_KEY]->to_array());
+
+        // return array(Target_Cloudsearch::FIELD_PAYLOAD);
     }
     
     /**

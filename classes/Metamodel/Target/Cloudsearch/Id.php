@@ -27,8 +27,6 @@ extends Metamodel_Target_Cloudsearch
         $this->key_map = array();
         foreach ($entity[Entity_Root::VIEW_KEY] as $key => $value)
         {
-//            $entanglement_name = $entity[Entity_Root::VIEW_KEY]->get_entanglement_name($key);
-//            $cs_alias = $entity[Target_Cloudsearch::VIEW_INDEXER]->lookup_entanglement_name($entanglement_name);
             $this->key_map[$key] = sprintf('%s%s%s', $entity->get_root()->get_name(), Target_Cloudsearch::DELIMITER, $key);
         }
 

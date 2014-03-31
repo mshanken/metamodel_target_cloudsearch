@@ -449,13 +449,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         $children = $view->get_children();
         if ($children[$alias] instanceof Entity_Array)
-        {
+        { 
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
             foreach ($search_value as $search_curr)
             {
                 $query['WHERE'][] = sprintf(" %s:'%s'"
                     , $column_name_renamed
-                    , strtr($search_curr, array("'" => "\\'",'\\' => '\\\\'))
+                    , $this->sane_str($search_curr)
                     );
             }
         }
@@ -463,14 +463,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         {
             $query['WHERE'][] = sprintf(" %s:%s"
                 , $column_name_renamed
-                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+                ,$this->sane_str($search_curr)
             );
         }
         else
         {
             $query['WHERE'][] = sprintf(" %s:'%s'"
                 , $column_name_renamed
-                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+                ,$this->sane_str($search_curr)
             );
         }
 
@@ -501,8 +501,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 //        for ($i=0; $i<count($search_terms); $i++)
         foreach ($search_terms as $search_term)
         {
-            // $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
-            if ( is_numeric($search_term))
+            $search_term = $this->sane_str($search_term);
+
+            // short strings and numbers do not get the wildcard
+            if ( is_numeric($search_term) || strlen($search_term) == 2)
             {
                  $clean_terms[] = sprintf("(field %s '%s')",
                     $field_name,
@@ -524,7 +526,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $cloudsearch_string = implode(' ', $clean_terms);
         
         $query['WHERE'][] = $cloudsearch_string;
-        
         
         return $query;
 
@@ -581,7 +582,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , $this->clean_field_name($view->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
-            , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+            , $this->sane_str($search_value)
         );
         
         return $query;
@@ -599,7 +600,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 , $this->clean_field_name($view->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
                 , $this->clean_field_name($alias)
-                , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+                , $this->sane_str($search_value)
                 );
         return $query;
     }
@@ -1103,7 +1104,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             // @TODO use visit_exact()
             'bq' => sprintf('%s:"%s"'
                 , Target_Cloudsearch::FIELD_ENTITY
-                , strtr($entity->get_root()->get_name(), array("'" => "\\\'",'\\' => '\\\\'))
+                , $this->sane_str($entity->get_root()->get_name())
             ),
         );
 
@@ -1237,5 +1238,16 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
         }
         return $facet_fields;
+    }
+
+
+    protected function sane_str($search_curr)
+    {
+        // simple escaping
+        // $omit = array("'" => "\\'",'\\' => '\\\\');
+        // return strtr(Parse::deaccent($search_curr), $omit);
+
+        // more aggressive punctuation scrubbing for #766
+        return preg_replace('/[A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
     }
 }

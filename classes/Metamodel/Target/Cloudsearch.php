@@ -394,7 +394,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $fields = array();
         $fields = $this->targetize_fields($entity[Entity_Root::VIEW_KEY], array($entity_name), $fields);
         $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), $fields);
-        $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
+//        $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
         $fields[Target_Cloudsearch::FIELD_PAYLOAD] = json_encode(array(
             Entity_Root::VIEW_KEY => $entity[Entity_Root::VIEW_KEY]->to_array(),
             Entity_Root::VIEW_TS => $entity[Entity_Root::VIEW_TS]->to_array(),
@@ -448,7 +448,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 );
 
         $children = $view->get_children();
-        if ($children[$alias] instanceof Entity_Array)
+        if (array_key_exists($alias,$children) && $children[$alias] instanceof Entity_Array)
         { 
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
             foreach ($search_value as $search_curr)
@@ -459,18 +459,18 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     );
             }
         }
-        else if ($children[$alias] instanceof Type_Number)
+        else if (array_key_exists($alias,$children) && $children[$alias] instanceof Type_Number)
         {
             $query['WHERE'][] = sprintf(" %s:%s"
                 , $column_name_renamed
-                ,$this->sane_str($search_curr)
+                ,$this->sane_str($search_value)
             );
         }
         else
         {
             $query['WHERE'][] = sprintf(" %s:'%s'"
                 , $column_name_renamed
-                ,$this->sane_str($search_curr)
+                ,$this->sane_str($search_value)
             );
         }
 
@@ -503,13 +503,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         {
             $search_term = $this->sane_str($search_term);
 
-            // short strings and numbers do not get the wildcard
-            if ( is_numeric($search_term) || strlen($search_term) == 2)
+            // short strings and int do not get the wildcard
+            $t = Type::factory('Int');
+            if ($t->validate($search_term) || strlen($search_term) == 2)
             {
-                 $clean_terms[] = sprintf("(field %s '%s')",
-                    $field_name,
-                    $search_term
-                );
+                $query = $this->visit_exact($entity, $alias, $search_term, $query);
             }
             else if (strlen($search_term) > 1)
             {
@@ -1104,7 +1102,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             // @TODO use visit_exact()
             'bq' => sprintf('%s:"%s"'
                 , Target_Cloudsearch::FIELD_ENTITY
-                , $this->sane_str($entity->get_root()->get_name())
+                , $entity->get_root()->get_name()
             ),
         );
 
@@ -1248,6 +1246,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         // return strtr(Parse::deaccent($search_curr), $omit);
 
         // more aggressive punctuation scrubbing for #766
-        return preg_replace('/[A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
+        return preg_replace('/[^A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
     }
 }

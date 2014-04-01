@@ -19,7 +19,7 @@ extends Metamodel_Target_Cloudsearch
 
     public function __construct()
     {
-        $this->db_target = new Target_Pgsql();
+        $this->db_target = new Target_Pgsql_Memcache();
     }
 
     public function select(Entity_Row $entity, Selector $selector = null) 

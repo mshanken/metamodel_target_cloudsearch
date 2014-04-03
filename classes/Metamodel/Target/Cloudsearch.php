@@ -509,7 +509,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             }
             else if (strlen($search_term) > 1)
             {
-                $search_term = Parse::deaccent($search_term);
                 $clean_terms[] = sprintf("(or (and (field %s '%s')) (and (field %s '%s*')))",
                     $field_name,
                     $search_term,
@@ -1237,7 +1236,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     }
 
 
-    protected function sane_str($search_curr)
+    static public function sane_str($search_curr)
     {
         // simple escaping
         // $omit = array("'" => "\\'",'\\' => '\\\\');

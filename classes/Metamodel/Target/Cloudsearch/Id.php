@@ -12,7 +12,7 @@
  **/
 
 class Metamodel_Target_Cloudsearch_Id
-extends Metamodel_Target_Cloudsearch
+extends Target_Cloudsearch
 {
     protected $key_map = null;
     protected $db_target;

@@ -494,11 +494,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
-        $search_terms = explode(' ', $search_value);
+
         $clean_terms = array();
-        
-        // Build search query with wildcard and exact for each word in string
-//        for ($i=0; $i<count($search_terms); $i++)
+        $search_terms = explode(' ', $search_value);
         foreach ($search_terms as $search_term)
         {
             $search_term = $this->sane_str($search_term);

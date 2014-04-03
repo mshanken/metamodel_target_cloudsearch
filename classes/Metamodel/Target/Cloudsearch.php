@@ -1131,7 +1131,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         }    
 
         $query_parameters['return-fields'] = implode(',', $this->select_helper_query_return($entity));
-        $query_parameters['facet'] = implode(',', $this->select_helper_query_facet($entity));
+        $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
 
         return $query_parameters;
     }
@@ -1162,7 +1162,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access protected
      * @return array
      */
-    protected function select_helper_query_facet($entity)
+    protected function select_helper_query_facet($entity, $query_parameters)
     {
         $facet_fields = array();
         // $value is not used.  
@@ -1232,7 +1232,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 }
             }
         }
-        return $facet_fields;
+        $query_parameters['facet'] = implode(',', $facet_fields);
+        return $query_parameters;
     }
 
 

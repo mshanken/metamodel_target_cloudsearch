@@ -103,6 +103,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     
     protected static $elapsed = null;
     
+
     /**
      * select
      *
@@ -114,113 +115,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function select(Entity_Row $entity, Selector $selector = null)
     {
-        $query = array();    
-        $query_parameters = array(
-            // @TODO use visit_exact()
-            'bq' => sprintf('%s:"%s"'
-                , Target_Cloudsearch::FIELD_ENTITY
-                , strtr($entity->get_root()->get_name(), array("'" => "\\\'",'\\' => '\\\\'))
-            ),
-            'return-fields' => Target_Cloudsearch::FIELD_PAYLOAD,
-        );
-
-        if ($selector instanceof Selector)
-        {
-            if ($query = $selector->build_target_query($entity, $this, $query))
-            {
-                $where = '';    
-                if(is_array($query['WHERE_CLAUSE']))
-                {    
-                    $where = implode(', ', $query['WHERE_CLAUSE']);    
-                }        
-                $query_parameters['bq'] = sprintf("(and %s %s)", $query_parameters['bq'], $where);
-            }
-
-            if ($query = $selector->build_target_sort($entity, $this, $query))
-            {
-                $rank = $query['SORT_BY'];
-                $query_parameters['rank'] = $rank;
-            }
-
-            if ($query = $selector->build_target_page($entity, $this, $query))
-            {
-                $page = $query['LIMIT'];    
-                $query_parameters['start'] = $page[0];
-                $query_parameters['size'] = $page[1];
-            }
-        }    
-                            
-        $facet_fields = array();
-        // $value is not used.  
-        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
-        {
-            $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
-            $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);
-
-            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $key))
-            {
-                if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $key)) 
-                {
-                    $facet_fields[] = sprintf('%s%s%s_%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $key
-                            , Target_Cloudsearch::ATTR_FACET_MAP
-                            );
-                }
-                else if ($ranges = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_RANGE, $key))
-                {
-                    $facet_fields_range = array();
-                    foreach ($ranges as $range)
-                    {
-                        $facet_fields_range[] = Target_Cloudsearch::parse_attr_facet_range($range);
-                    }
-
-                    if (!empty($facet_fields_range))
-                    {
-                        $query_parameters[sprintf('facet-%s%s%s-constraints'
-                                , $entity->get_root()->get_name()
-                                , Target_Cloudsearch::DELIMITER
-                                , $key
-                        )] = implode(',', $facet_fields_range);
-                    }
-
-                }
-
-                else if ($entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_alias))
-                {
-                    // fields cannot be both sortable and facetable, so we use the facet field here
-                    $facet_fields[] = sprintf('%s%s%s_%s'
-                        , $entity->get_root()->get_name()
-                        , Target_Cloudsearch::DELIMITER
-                        , $key
-                        , Target_Cloudsearch::ATTR_FACET
-                    );
-                }
-                /*
-                elseif (array_key_exists(sprintf('%s_%s', $key, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
-                {
-                    $facet_fields[] = sprintf('%s%s%s_%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $key
-                            , Target_Cloudsearch::ATTR_FACET
-                            );
-                }
-                */
-                else
-                {
-                    $facet_fields[] = sprintf('%s%s%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $key
-                            );
-                }
-            }
-        }
-        $query_parameters['facet'] = implode(',', $facet_fields);
-//echo $query_parameters['bq'];
-        $query_string = http_build_query($query_parameters);
+        $query = $this->select_helper_query_build($entity, $selector);
+        $query_string = http_build_query($query);
 
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
@@ -498,7 +394,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $fields = array();
         $fields = $this->targetize_fields($entity[Entity_Root::VIEW_KEY], array($entity_name), $fields);
         $fields = $this->targetize_fields($entity[Target_Cloudsearch::VIEW_INDEXER], array($entity_name), $fields);
-        $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
+//        $fields[Target_Cloudsearch::FIELD_ENTITY] = $entity_name;
         $fields[Target_Cloudsearch::FIELD_PAYLOAD] = json_encode(array(
             Entity_Root::VIEW_KEY => $entity[Entity_Root::VIEW_KEY]->to_array(),
             Entity_Root::VIEW_TS => $entity[Entity_Root::VIEW_TS]->to_array(),
@@ -509,6 +405,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     }
        
 
+    /**
+     * columnize
+     *
+     * @param Entity_Row $entity
+     * @param array $document
+     * @access public
+     * @return void
+     */
     public function columnize(Entity_Row $entity, array $document) 
     {
         if (!($payload = array_shift($document[Target_Cloudsearch::FIELD_PAYLOAD])))
@@ -544,29 +448,29 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 );
 
         $children = $view->get_children();
-        if ($children[$alias] instanceof Entity_Array)
-        {
+        if (array_key_exists($alias,$children) && $children[$alias] instanceof Entity_Array)
+        { 
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
             foreach ($search_value as $search_curr)
             {
                 $query['WHERE'][] = sprintf(" %s:'%s'"
                     , $column_name_renamed
-                    , strtr($search_curr, array("'" => "\\'",'\\' => '\\\\'))
+                    , $this->sane_str($search_curr)
                     );
             }
         }
-        else if ($children[$alias] instanceof Type_Number)
+        else if (array_key_exists($alias,$children) && $children[$alias] instanceof Type_Number)
         {
             $query['WHERE'][] = sprintf(" %s:%s"
                 , $column_name_renamed
-                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+                ,$this->sane_str($search_value)
             );
         }
         else
         {
             $query['WHERE'][] = sprintf(" %s:'%s'"
                 , $column_name_renamed
-                , strtr(Parse::deaccent($search_value), array("'" => "\\'",'\\' => '\\\\'))
+                ,$this->sane_str($search_value)
             );
         }
 
@@ -590,20 +494,18 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
         );
-        $search_terms = explode(' ', $search_value);
+
         $clean_terms = array();
-        
-        // Build search query with wildcard and exact for each word in string
-//        for ($i=0; $i<count($search_terms); $i++)
+        $search_terms = explode(' ', $search_value);
         foreach ($search_terms as $search_term)
         {
-            // $search_term = preg_replace('/[^0-9a-zA-Z]/', '', $search_term);
-            if ( is_numeric($search_term))
+            $search_term = $this->sane_str($search_term);
+
+            // short strings and int do not get the wildcard
+            $t = Type::factory('Int');
+            if ($t->validate($search_term) || strlen($search_term) == 2)
             {
-                 $clean_terms[] = sprintf("(field %s '%s')",
-                    $field_name,
-                    $search_term
-                );
+                $query = $this->visit_exact($entity, $alias, $search_term, $query);
             }
             else if (strlen($search_term) > 1)
             {
@@ -620,7 +522,6 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         $cloudsearch_string = implode(' ', $clean_terms);
         
         $query['WHERE'][] = $cloudsearch_string;
-        
         
         return $query;
 
@@ -677,7 +578,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             , $this->clean_field_name($view->get_root()->get_name())
             , Target_Cloudsearch::DELIMITER
             , $this->clean_field_name($alias)
-            , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+            , $this->sane_str($search_value)
         );
         
         return $query;
@@ -695,7 +596,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 , $this->clean_field_name($view->get_root()->get_name())
                 , Target_Cloudsearch::DELIMITER
                 , $this->clean_field_name($alias)
-                , strtr($search_value, array("'" => "\\'",'\\' => '\\\\'))
+                , $this->sane_str($search_value)
                 );
         return $query;
     }
@@ -897,7 +798,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     public function get_domain_description() 
     {
         $memcache = new Memcache;
-        $memcache->connect(Kohana::$config->load('cloudsearch.cache_host'), Kohana::$config->load('cloudsearch.cache_port'));
+        $memcache->connect(Kohana::$config->load('memcache.cache_host')
+                , Kohana::$config->load('memcache.cache_port'));
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
 
         $memcache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
@@ -941,7 +843,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     && array_key_exists('Endpoint',$this->domain_description['DocService'])
                 )
                 {
-                    $cache_ttl = Kohana::$config->load('cloudsearch.cache_ttl');
+                    $cache_ttl = Kohana::$config->load('memcache.cache_ttl');
                     $memcache->set($memcache_key, $this->domain_description, false, $cache_ttl);
                 }
             }
@@ -1179,5 +1081,169 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             return $ret;
         }
         return $default;
+    }
+
+
+
+
+
+
+
+
+    /**
+     * helper function to build the query for select()
+     *
+     */
+    protected function select_helper_query_build(Entity_Row $entity, Selector $selector = null)
+    {
+        $query_parameters = array(
+            // @TODO use visit_exact()
+            'bq' => sprintf('%s:"%s"'
+                , Target_Cloudsearch::FIELD_ENTITY
+                , $entity->get_root()->get_name()
+            ),
+        );
+
+        if ($selector instanceof Selector)
+        {
+            $query = array();    
+            if ($query = $selector->build_target_query($entity, $this, $query))
+            {
+                $where = '';    
+                if(is_array($query['WHERE_CLAUSE']))
+                {    
+                    $where = implode(', ', $query['WHERE_CLAUSE']);    
+                }        
+                $query_parameters['bq'] = sprintf("(and %s %s)", $query_parameters['bq'], $where);
+            }
+
+            if ($query = $selector->build_target_sort($entity, $this, $query))
+            {
+                $rank = $query['SORT_BY'];
+                $query_parameters['rank'] = $rank;
+            }
+
+            if ($query = $selector->build_target_page($entity, $this, $query))
+            {
+                $page = $query['LIMIT'];    
+                $query_parameters['start'] = $page[0];
+                $query_parameters['size'] = $page[1];
+            }
+        }    
+
+        $query_parameters['return-fields'] = implode(',', $this->select_helper_query_return($entity));
+        $query_parameters['facet'] = implode(',', $this->select_helper_query_facet($entity));
+
+        return $query_parameters;
+    }
+    
+
+    /**
+     * select_helper_query_facet
+     *
+     * overrridable helper to build query[return-fields] for select()
+     *
+     * @param mixed $entity
+     * @access protected
+     * @array void
+     */
+    protected function select_helper_query_return($entity)
+    {
+        return array_keys($entity[Entity_Root::VIEW_KEY]->to_array());
+
+        // return array(Target_Cloudsearch::FIELD_PAYLOAD);
+    }
+    
+    /**
+     * select_helper_query_facet
+     *
+     * overrridable helper to build query[facet] for select()
+     *
+     * @param mixed $entity
+     * @access protected
+     * @return array
+     */
+    protected function select_helper_query_facet($entity)
+    {
+        $facet_fields = array();
+        // $value is not used.  
+        foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
+        {
+            $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
+            $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);
+
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $key))
+            {
+                if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $key)) 
+                {
+                    $facet_fields[] = sprintf('%s%s%s_%s'
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $key
+                            , Target_Cloudsearch::ATTR_FACET_MAP
+                            );
+                }
+                else if ($ranges = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_RANGE, $key))
+                {
+                    $facet_fields_range = array();
+                    foreach ($ranges as $range)
+                    {
+                        $facet_fields_range[] = Target_Cloudsearch::parse_attr_facet_range($range);
+                    }
+
+                    if (!empty($facet_fields_range))
+                    {
+                        $query_parameters[sprintf('facet-%s%s%s-constraints'
+                                , $entity->get_root()->get_name()
+                                , Target_Cloudsearch::DELIMITER
+                                , $key
+                        )] = implode(',', $facet_fields_range);
+                    }
+
+                }
+
+                else if ($entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_alias))
+                {
+                    // fields cannot be both sortable and facetable, so we use the facet field here
+                    $facet_fields[] = sprintf('%s%s%s_%s'
+                        , $entity->get_root()->get_name()
+                        , Target_Cloudsearch::DELIMITER
+                        , $key
+                        , Target_Cloudsearch::ATTR_FACET
+                    );
+                }
+                /*
+                elseif (array_key_exists(sprintf('%s_%s', $key, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
+                {
+                    $facet_fields[] = sprintf('%s%s%s_%s'
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $key
+                            , Target_Cloudsearch::ATTR_FACET
+                            );
+                }
+                */
+                else
+                {
+                    $facet_fields[] = sprintf('%s%s%s'
+                            , $entity->get_root()->get_name()
+                            , Target_Cloudsearch::DELIMITER
+                            , $key
+                            );
+                }
+            }
+        }
+        return $facet_fields;
+    }
+
+
+    protected function sane_str($search_curr)
+    {
+        // simple escaping
+        // $omit = array("'" => "\\'",'\\' => '\\\\');
+        // return strtr(Parse::deaccent($search_curr), $omit);
+
+        // more aggressive punctuation scrubbing for #766
+        return preg_replace('/[^A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
     }
 }

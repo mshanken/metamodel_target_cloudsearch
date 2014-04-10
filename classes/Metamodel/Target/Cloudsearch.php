@@ -121,6 +121,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
+        $this->url[urldecode($query_string)] = $url;
         $options = array(
             CURLOPT_RETURNTRANSFER => true,
         );
@@ -143,7 +144,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             throw new Exception('Cloudsearch error : ' . $response['messages'][0]['message']);
         }
        
-        Metamodel_Target_Cloudsearch::$elapsed = $response['info']['time-ms'] / 1000.0;
+        Metamodel_Target_Cloudsearch::$elapsed[] = $response['info']['time-ms'] / 1000.0;
 
         $results = array();
         foreach($response['hits']['hit'] as $hit) 
@@ -880,7 +881,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function debug_info()
     {
-        return array('elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
+        return array('uri' => $this->url,
+                'elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
     /**

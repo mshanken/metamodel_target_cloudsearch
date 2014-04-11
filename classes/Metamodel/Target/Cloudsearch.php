@@ -1186,9 +1186,10 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         {
             $facet_parameters = array_merge($facet_parameters, $this->facetize($entity, $key));
         }
-        if (array_key_exists('SPECIAL_FACETS', $query))
+
+        if (array_key_exists('SPECIAL_FACET', $query))
         {
-            foreach ($query['SPECIAL_FACETS'] as $key)
+            foreach ($query['SPECIAL_FACET'] as $key)
             {
                 $facet_parameters = array_merge($facet_parameters, $this->facetize($entity, $key));
             }

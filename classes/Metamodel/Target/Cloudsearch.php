@@ -1294,11 +1294,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
     static public function sane_str($search_curr)
     {
-        // simple escaping
-        // $omit = array("'" => "\\'",'\\' => '\\\\');
-        // return strtr(Parse::deaccent($search_curr), $omit);
+       // simple escaping
+       $omit = array("'" => "\\'",'\\' => '\\\\');
+       return strtr(Parse::deaccent($search_curr), $omit);
 
         // more aggressive punctuation scrubbing for #766
-        return preg_replace('/[^A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
+        // return preg_replace('/[^A-Za-z0-9 ]/', '', Parse::deaccent($search_curr));
     }
 }

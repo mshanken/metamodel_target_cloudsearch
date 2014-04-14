@@ -752,11 +752,24 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         // @TODO    
     }
     
+    /**
+     * get_facets
+     *
+     * @access public
+     * @return void
+     */
     public function get_facets() 
     {
         return $this->facets;
     }
 
+    /**
+     * clean_field_name
+     *
+     * @param mixed $name
+     * @access public
+     * @return void
+     */
     public function clean_field_name($name) 
     {
         $name = strtolower($name);
@@ -1147,9 +1160,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $query_parameters['size'] = $page[1];
             }
         }    
+        $query = $this->select_helper_query_facet($entity, $query);
+        $query_parameters['facet'] = $query['facet'];
 
         $query_parameters['return-fields'] = implode(',', $this->select_helper_query_return($entity));
-        $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
+        // $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
 
         return $query_parameters;
     }
@@ -1180,79 +1195,101 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access protected
      * @return array
      */
-    protected function select_helper_query_facet($entity, $query_parameters)
+    protected function select_helper_query_facet($entity, $query)
     {
-        $facet_fields = array();
+        $facet_parameters = array();
+        $this->facet_fields = array();
         // $value is not used.  
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
         {
-            $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
-            $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);
+            $facet_parameters = array_merge($facet_parameters, $this->facetize($entity, $key));
+        }
 
-            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $key))
+        if (array_key_exists('SPECIAL_FACET', $query))
+        {
+            foreach ($query['SPECIAL_FACET'] as $key)
             {
-                if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $key)) 
+                $entity[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Target_Cloudsearch::ATTR_FACET, $key);
+                $special_facets = $this->facetize($entity, $key);
+                $facet_parameters = array_merge($facet_parameters, $special_facets);
+            }
+        }
+
+        $facet_parameters['facet'] = implode(',', $this->facet_fields);
+        return $facet_parameters;
+    }
+
+    
+    protected function facetize($entity, $key)
+    {
+        $facet_parameters = array();
+        $entangled_as = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_entanglement_name($key);
+        $selector_alias = $entity[Selector::VIEW_SELECTOR]->lookup_entanglement_name($entangled_as);
+
+        if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET, $key))
+        {
+            if ($entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_MAP, $key)) 
+            {
+                $this->facet_fields[] = sprintf('%s%s%s_%s'
+                        , $entity->get_root()->get_name()
+                        , Target_Cloudsearch::DELIMITER
+                        , $key
+                        , Target_Cloudsearch::ATTR_FACET_MAP
+                        );
+            }
+            else if ($ranges = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_RANGE, $key))
+            {
+                $this->facet_fields_range = array();
+                foreach ($ranges as $range)
                 {
-                    $facet_fields[] = sprintf('%s%s%s_%s'
+                    $this->facet_fields_range[] = Target_Cloudsearch::parse_attr_facet_range($range);
+                }
+
+                if (!empty($this->facet_fields_range))
+                {
+                    $facet_parameters[sprintf('facet-%s%s%s-constraints'
                             , $entity->get_root()->get_name()
                             , Target_Cloudsearch::DELIMITER
                             , $key
-                            , Target_Cloudsearch::ATTR_FACET_MAP
-                            );
-                }
-                else if ($ranges = $entity[Target_Cloudsearch::VIEW_INDEXER]->get_attribute(Target_Cloudsearch::ATTR_FACET_RANGE, $key))
-                {
-                    $facet_fields_range = array();
-                    foreach ($ranges as $range)
-                    {
-                        $facet_fields_range[] = Target_Cloudsearch::parse_attr_facet_range($range);
-                    }
-
-                    if (!empty($facet_fields_range))
-                    {
-                        $query_parameters[sprintf('facet-%s%s%s-constraints'
-                                , $entity->get_root()->get_name()
-                                , Target_Cloudsearch::DELIMITER
-                                , $key
-                        )] = implode(',', $facet_fields_range);
-                    }
-
+                            )] = implode(',', $this->facet_fields_range);
                 }
 
-                else if ($entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_alias))
-                {
-                    // fields cannot be both sortable and facetable, so we use the facet field here
-                    $facet_fields[] = sprintf('%s%s%s_%s'
+            }
+
+            else if ($entity[Selector::VIEW_SELECTOR]->get_attribute(Selector::ATTR_SORTABLE, $selector_alias))
+            {
+                // fields cannot be both sortable and facetable, so we use the facet field here
+                $this->facet_fields[] = sprintf('%s%s%s_%s'
                         , $entity->get_root()->get_name()
                         , Target_Cloudsearch::DELIMITER
                         , $key
                         , Target_Cloudsearch::ATTR_FACET
-                    );
-                }
-                /*
-                elseif (array_key_exists(sprintf('%s_%s', $key, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
-                {
-                    $facet_fields[] = sprintf('%s%s%s_%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $key
-                            , Target_Cloudsearch::ATTR_FACET
-                            );
-                }
-                */
-                else
-                {
-                    $facet_fields[] = sprintf('%s%s%s'
-                            , $entity->get_root()->get_name()
-                            , Target_Cloudsearch::DELIMITER
-                            , $key
-                            );
-                }
+                        );
+            }
+            /*
+               elseif (array_key_exists(sprintf('%s_%s', $key, Target_Cloudsearch::ATTR_FACET), $entity[Target_Cloudsearch::VIEW_INDEXER])) 
+               {
+               $this->facet_fields[] = sprintf('%s%s%s_%s'
+               , $entity->get_root()->get_name()
+               , Target_Cloudsearch::DELIMITER
+               , $key
+               , Target_Cloudsearch::ATTR_FACET
+               );
+               }
+             */
+            else
+            {
+                $this->facet_fields[] = sprintf('%s%s%s'
+                        , $entity->get_root()->get_name()
+                        , Target_Cloudsearch::DELIMITER
+                        , $key
+                        );
             }
         }
-        $query_parameters['facet'] = implode(',', $facet_fields);
-        return $query_parameters;
+
+        return $facet_parameters;
     }
+
 
 
     static public function sane_str($search_curr)

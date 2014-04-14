@@ -87,6 +87,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
 
     /**
+     * url 
+     *
+     * @var array
+     * @access protected
+     */
+    protected $url = array();
+
+    /**
      * AWS Domain Description
      *
      * search / document url and arn info

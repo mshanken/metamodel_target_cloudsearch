@@ -37,6 +37,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     const DELIMITER = '__x__';
 
     /**
+     * ATTR_TEXT_UNIVERSAL 
+     * 
+     * include field in UNIVERSAL_SEARCH_FIELD
+     *
+     * @const string
+     */
+    const ATTR_TEXT_UNIVERSAL = 'do_universal';
+    /**
      * ATTR_FACET 
      *
      * @const string
@@ -77,6 +85,14 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @const string
      */
     const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
+
+    /**
+     * url 
+     *
+     * @var array
+     * @access protected
+     */
+    protected $url = array();
 
     /**
      * AWS Domain Description

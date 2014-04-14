@@ -2,6 +2,7 @@
 
 class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
 {
+    protected $copy_to_any = array();
 
     protected function source_map($field, $view)
     {   
@@ -187,19 +188,19 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      */
     protected function build_entity_domain(Entity_Row $entity) 
     {
-        $cs = new Target_Cloudsearch();
+        $cstarget = new Target_Cloudsearch();
         $field_definitions = array();
 
         $entity_name = $this->clean_field_name($entity->get_root()->get_name());
 
         foreach (array(Entity_Root::VIEW_KEY, Target_Cloudsearch::VIEW_INDEXER) as $view)
         {
-            $field_definitions = $cs->targetize_fields($entity[$view], array($entity_name), $field_definitions, array($this,'type_transform'));
+            $field_definitions = $cstarget->targetize_fields($entity[$view], array($entity_name), $field_definitions, array($this,'type_transform'));
         }
 
         // create a facet_map field if needed
         $info = $entity->get_root();
-        foreach ($field_definitions as $k => $v)
+        foreach ($field_definitions as $v)
         {
             $field_definitions += $this->source_map($v, $info[Target_Cloudsearch::VIEW_INDEXER]);
         }
@@ -211,21 +212,10 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                 , Target_Cloudsearch::UNIVERSAL_SEARCH_FIELD
                 );
 
-        $copy = array();
-        foreach ($field_definitions as $k => $v)
-        {
-            if (!array_key_exists('IndexFieldType', $v)) var_dump($k);
-
-            if ($v['IndexFieldType'] == 'text')
-            {
-                $copy[] = $v['IndexFieldName'];
-            }
-        }
-
-        if (count($copy))
+        if (count($this->copy_to_any))
         {
             $field_definitions += $this->text_field($universal_field, false, false);
-            $field_definitions[$universal_field] = $this->source_copy($field_definitions[$universal_field], $copy);
+            $field_definitions[$universal_field] = $this->source_copy($field_definitions[$universal_field], $this->copy_to_any);
         }
 
         return $field_definitions;
@@ -272,7 +262,6 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
         }
 
         // Pivot children
-        /*
         if ($type instanceof Entity_Columnset_Join)
         {
             if (count($type) > 1) 
@@ -284,7 +273,11 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         );
             }
         }
-        */
+
+        if ($parent->get_attribute(Target_Cloudsearch::ATTR_TEXT_UNIVERSAL, $alias))
+        {
+            $this->copy_to_any[] = $field_name;            
+        }
 
         if ($parent->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))
         {

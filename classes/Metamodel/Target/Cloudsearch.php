@@ -87,12 +87,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
     const UNIVERSAL_SEARCH_FIELD = 'cst_universal_search';
 
     /**
-     * url 
+     * debug 
      *
      * @var array
      * @access protected
      */
-    protected $url = array();
+    protected $debug = array();
 
     /**
      * AWS Domain Description
@@ -137,7 +137,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
-        $this->url[urldecode($query_string)] = $url;
+        $this->debug['link'] = $url;
+        $this->debug['query'] = $query;
         $options = array(
             CURLOPT_RETURNTRANSFER => true,
         );
@@ -910,7 +911,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     public function debug_info()
     {
-        return array('uri' => $this->url,
+        return array('query' => $this->debug,
                 'elapsed' => Metamodel_Target_Cloudsearch::$elapsed);
     }
 
@@ -1160,8 +1161,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $query_parameters['size'] = $page[1];
             }
         }    
-        $query = $this->select_helper_query_facet($entity, $query);
-        $query_parameters['facet'] = $query['facet'];
+        $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
+        // $query_parameters['facet'] = $query['facet'];
 
         $query_parameters['return-fields'] = implode(',', $this->select_helper_query_return($entity));
         // $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
@@ -1197,12 +1198,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      */
     protected function select_helper_query_facet($entity, $query)
     {
-        $facet_parameters = array();
         $this->facet_fields = array();
         // $value is not used.  
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
         {
-            $facet_parameters = array_merge($facet_parameters, $this->facetize($entity, $key));
+            $query = array_merge($query, $this->facetize($entity, $key));
         }
 
         if (array_key_exists('SPECIAL_FACET', $query))
@@ -1211,12 +1211,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             {
                 $entity[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Target_Cloudsearch::ATTR_FACET, $key);
                 $special_facets = $this->facetize($entity, $key);
-                $facet_parameters = array_merge($facet_parameters, $special_facets);
+                $query = array_merge($query, $special_facets);
             }
         }
 
-        $facet_parameters['facet'] = implode(',', $this->facet_fields);
-        return $facet_parameters;
+        $query['facet'] = implode(',', $this->facet_fields);
+        return $query;
     }
 
     

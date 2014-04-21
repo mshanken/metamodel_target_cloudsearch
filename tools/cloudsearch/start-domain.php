@@ -92,6 +92,26 @@ $cloudsearch->UpdateStopwordOptions(array(
     'Stopwords' => json_encode(array('stopwords'=>array())),
 ));
 
+echo "\n\n Configure Synonyms ";
+
+$cloudsearch->UpdateSynonymOptions(array(
+    'DomainName' => $domain_name,
+    'Synonyms' => json_encode(array('synonyms'=>array(
+                'ap' => array('a.p.'),
+                'br' => array('b.r.'),
+                'cg' => array('c.g.'),
+                'dr' => array('d.r.'),
+                'af' => array('A.-F.','A.F.'),
+                'jf' => array('j.-f.','j.f.'),
+                'dfj' => array('d.f.j.'),
+                'fx' => array('f.x.'),
+                'gh' => array('g.h.'),
+    ))),
+));
+
+
+
+
 echo "\n\n Initial Indexing started to allow data upload";
 
 $cloudsearch->indexDocuments(array('DomainName' => $domain_name));

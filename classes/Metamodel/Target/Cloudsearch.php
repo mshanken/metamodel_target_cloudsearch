@@ -121,7 +121,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         // calls curl to aws
         $url = $this->get_search_endpoint() .  $query_string;
         $url = strtr($url, array(' ' => '%20'));
-        $this->url[urldecode($query_string)] = $url;
+        $this->url['link'] = $url;
+        $this->url['query'] = $query;
         $options = array(
             CURLOPT_RETURNTRANSFER => true,
         );

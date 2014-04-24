@@ -8,70 +8,79 @@ implements Target_Cloudsearchable
     {
         parent::__construct('example');    
         
-        $this['key'] = new Entity_Columnset('key');
-        $this['key']['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
-        $this['key']->set_attribute(Entity_Root::REQUIRED, 'primary_id');
+        $this[Entity_Root::VIEW_KEY] = new Entity_Columnset(Entity_Root::VIEW_KEY);
+        $this[Entity_Root::VIEW_KEY]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
+        $this[Entity_Root::VIEW_KEY]->set_attribute(Entity_Root::ATTR_REQUIRED, 'primary_id');
 
-        $this['timestamp'] = new Entity_Columnset('timestamp');
-        $this['timestamp']['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
-        $this['timestamp']->set_attribute(Entity_Root::REQUIRED, 'modified_at');
+        $this[Entity_Root::VIEW_TS] = new Entity_Columnset('timestamp');
+        $this[Entity_Root::VIEW_TS]['modified_at'] = new Entity_Column('modified_at', Type::factory('date'));
+        $this[Entity_Root::VIEW_TS]->set_attribute(Entity_Root::ATTR_REQUIRED, 'modified_at');
 
-        $this['api'] = new Entity_Columnset('api');
-        $this['api']['name'] = new Entity_Column('name', Type::factory('string'));
-        
-        $this['api']['related'] = new Entity_Columnset('related');
-        $this['api']['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
-        $this['api']['related']['related_name'] = new Entity_Column('related_name', Type::factory('string'));
-        $this['api']['related']->set_attribute(Entity_Root::REQUIRED, 'related_name');
-        
-        $multiple = new Entity_ColumnSet('multiple');
-        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
-        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::factory('string'));
-        $this['api']['multiple'] = array($multiple);
+        $this[Target_Cloudsearch::VIEW_INDEXER] = new Entity_Columnset('indexer');
+        // a string literal
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
 
-        $this[Target_Cloudsearch::VIEW_INDEXER] = new Entity_Columnset(Target_Cloudsearch::VIEW_INDEXER);
-        $this[Target_Cloudsearch::VIEW_INDEXER]['primary_id'] = new Entity_Column('primary_id', Type::factory('uuid'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['name'] = new Entity_Column('name', Type::factory('freetext'));
-        
-        // tests for columnset non-facet
-        $this[Target_Cloudsearch::VIEW_INDEXER]['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['related_name'] = new Entity_Column('related_name', Type::factory('freetext'));
-        
-        // tests for array[columnset] non-facet
-        $multiple_id = new Entity_Columnset_Join('multiple');
-        $multiple_id['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['multiple_id'] = array($multiple_id);
+        // a string freetext
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
 
-        $multiple_name = new Entity_Columnset_Join('multiple');
-        $multiple_name['multiple_name'] = new Entity_Column('multiple_name', Type::factory('freetext'));
-        $this[Target_Cloudsearch::VIEW_INDEXER]['multiple_name'] = array($multiple_name);
+        // a date
+        $this[Target_Cloudsearch::VIEW_INDEXER]['date'] = new Entity_Column('test_date', Type::factory('date'));
 
-        $this[Target_Cloudsearch::VIEW_FACETS] = new Entity_Columnset('cloudsearch_facets');
-        
-        // test for columnset facet
-        $related_facet = new Entity_ColumnSet('related_facetable');
-        $related_facet['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
-        $related_facet['related_name'] = new Entity_Column('related_name', Type::factory('freetext'));
-        $this[Target_Cloudsearch::VIEW_FACETS]['related_facetable'] = $related_facet;
+        // a number
+        $this[Target_Cloudsearch::VIEW_INDEXER]['integer'] = new Entity_Column('test_integer', Type::factory('int'));
 
-        // test for array[columnset] facet
-        $multiple_facet = new Entity_ColumnSet('multiple');
-        $multiple_facet['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
-        $multiple_facet['multiple_name'] = new Entity_Column('multiple_name', Type::factory('freetext'));
-        $this[Target_Cloudsearch::VIEW_FACETS]['multiple_facetable'] = array($multiple_facet);
+        // a uuid aka other
+        $this[Target_Cloudsearch::VIEW_INDEXER]['uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
 
-        $this[Target_Cloudsearch::VIEW_PAYLOAD] = new Entity_Columnset('cloudsearch_payload');
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['name'] = new Entity_Column('name', Type::factory('string'));
-        
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related'] = new Entity_Columnset('related');
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['related_id'] = new Entity_Column('related_id', Type::factory('uuid'));
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']['name'] = new Entity_Column('related_name', Type::factory('string'));
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['related']->set_attribute(Entity_Root::REQUIRED, 'name');
-        
-        $multiple = new Entity_ColumnSet('multiple');
-        $multiple['multiple_id'] = new Entity_Column('multiple_id', Type::factory('uuid'));
-        $multiple['multiple_name'] = new Entity_Column('multiple_name', Type::factory('string'));
-        $this[Target_Cloudsearch::VIEW_PAYLOAD]['multiple'] = array($multiple);
+        // a columnset
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset'] = new Entity_Columnset('test_colset');
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_date'] = new Entity_Column('test_date', Type::factory('date'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_integer'] = new Entity_Column('test_integer', Type::factory('int'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
+
+        // a simple array
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_simple_array'] = array(new Entity_Column('test_array_simple_node', Type::factory('int')));
+
+        // a pivot
+        $pivot = new Entity_Columnset_Join('test_colset_nested');  // entangles with a_nested_array
+        $pivot['test_string_pivot'] = new Entity_Column('test_string_literal', Type::factory('string'));
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_pivot'] = array($pivot);
+
+
+        // a pivot join
+        $pivot = new Entity_Columnset_Join('test_colset_nested'); // entangles with a_nested_pivot
+        $pivot['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
+        $pivot['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
+        $pivot['test_date'] = new Entity_Column('test_date', Type::factory('date'));
+        $pivot['test_integer'] = new Entity_Column('test_integer', Type::factory('int'));
+        $pivot['test_uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
+        $pivot->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
+        $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_freetext');
+        $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_literal');
+        $pivot->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_uuid');
+        $pivot->set_attribute(Selector::ATTR_SORTABLE, 'test_uuid');
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_pivot_complex'] = array($pivot);
+
+        // a nested array
+        $nestee = new Entity_Columnset('test_colset_nested');
+        $nestee['test_string_literal'] = new Entity_Column('test_string_literal', Type::factory('string'));
+        $nestee['test_string_freetext'] = new Entity_Column('test_string_freetext', Type::factory('string'));
+        $nestee['test_date'] = new Entity_Column('test_date', Type::factory('date'));
+        $nestee['test_integer'] = new Entity_Column('test_integer', Type::factory('int'));
+        $nestee['test_uuid'] = new Entity_Column('test_uuid', Type::factory('uuid'));
+        $nestee->set_attribute(Selector::ATTR_TEXT_SEARCH, 'test_string_freetext');
+        $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_freetext');
+        $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_string_literal');
+        $nestee->set_attribute(Target_Cloudsearch::ATTR_FACET, 'test_uuid');
+        $nestee->set_attribute(Selector::ATTR_SORTABLE, 'test_uuid');
+        $this[Target_Cloudsearch::VIEW_INDEXER]['test_nested'] = array($nestee);
+
+        $this['api'] = clone $this[Target_Cloudsearch::VIEW_INDEXER];
+
+        $this[Target_Cloudsearch::VIEW_PAYLOAD] = clone $this[Target_Cloudsearch::VIEW_INDEXER];
 
         $info = new Target_Info_Cloudsearch();
         $this->set_target_info(new Target_Cloudsearch(), $info);
@@ -86,21 +95,48 @@ class CloudsearchTest extends Unittest_TestCase
         $target = new Target_Cloudsearch();        
         $entity = Entity_Example::factory();
 
-        $entity['key']['primary_id'] = 'f59dfde3-3919-4b58-c200-0cb83fd4ff54';
+        $entity[Entity_Root::VIEW_KEY]['primary_id'] = 'f59dfde3-3919-4b58-c200-0cb83fd4ff54';
+        $entity[Entity_Root::VIEW_TS]['modified_at'] = '2013-02-02';
 
-        $entity['timestamp']['modified_at'] = '1357147485';
-        $entity['api']['name'] = 'An Entity';
+        $entity['api']['test_colset']['test_string_literal'] = 'a literal string here';
+        $entity['api']['test_colset']['test_string_freetext'] = 'a freetext string here';
+        $entity['api']['test_colset']['test_date'] = '2012-03-03';
+        $entity['api']['test_colset']['test_integer'] = 123456;
+        $entity['api']['test_colset']['test_uuid'] = 'ddddcccc-bbbb-aaaa-1111-000000000001';
+        $entity['api']['test_simple_array'] = array(
+            10,20,30,40,50
+        );
+        $entity['api']['test_nested'] = array(
+            array(
+                'test_string_literal' => 'pivot L 1',
+                'test_string_freetext' => 'pivot F 1',
+                'test_date' => '2001-01-01',
+                'test_integer' => 1111,
+                'test_uuid' => 'ddddcccc-bbbb-aaaa-1111-000000000001',
+            ),
+            array(
+                'test_string_literal' => 'pivot L 2',
+                'test_string_freetext' => 'pivot F 2',
+                'test_date' => '2001-02-02',
+                'test_integer' => 2222,
+                'test_uuid' => 'ddddcccc-bbbb-aaaa-1111-000000000002',
+            ),
+            array(
+                'test_string_literal' => 'pivot L 3',
+                'test_string_freetext' => 'pivot F 3',
+                'test_date' => '2001-03-03',
+                'test_integer' => 3333,
+                'test_uuid' => 'ddddcccc-bbbb-aaaa-1111-000000000003',
+            ),
+        );
 
-        $entity['api']['related']['related_id'] = 'd3db3422-c7a4-4a73-c8f4-e5940c02c2c1';
-        $entity['api']['related']['related_name'] = 'A Related Entity';
-        $entity['api']['multiple'][0]['multiple_id'] = '1c0cc778-d5ad-4d4c-9280-064c483df702';
-        $entity['api']['multiple'][0]['multiple_name'] = 'A Multiple Entity';
-        $entity['api']['multiple'][1]['multiple_id'] = '8663622f-cac6-4041-9cd1-d9f9288b4aa6';
-        $entity['api']['multiple'][1]['multiple_name'] = 'Another Multiple Entity';
-        
-        $json = $target->targetize($entity);
+
+
+
+
+        $json = $target->create_document($entity);
         $parsed = Parse::json_parse($json, true);
-        
+
         $this->assertEquals(5, count($parsed));
         $this->assertEquals("add", $parsed['type']);
         $this->assertEquals("en", $parsed['lang']);
@@ -109,84 +145,87 @@ class CloudsearchTest extends Unittest_TestCase
         $this->assertInternalType('array', $parsed['fields']);
         
         $fields = $parsed['fields'];
-        $this->assertEquals(10, count($fields));
+        $this->assertEquals(21, count($fields));
 
-        $this->assertEquals("example", $fields['entity']);
-        $this->assertInternalType('string', $fields['payload']);
+        $this->assertEquals("example", $fields[Target_Cloudsearch::FIELD_ENTITY]);
+        $this->assertInternalType('string', $fields[Target_Cloudsearch::FIELD_PAYLOAD]);
 
-        $this->assertEquals($entity['key']['primary_id'], $fields['example__x__primary_id']);
-        $this->assertEquals($entity['api']['name'], $fields['example__x__name']);
-        $this->assertEquals($entity['api']['related']['related_id'],
-                            $fields['example__x__related_id']);
-        $this->assertEquals($entity['api']['related']['related_name'],
-                            $fields['example__x__related_name']);
-        $this->assertInternalType('string', $fields['example__x__related_facetable']);
-        $related_fields = Parse::json_parse($fields['example__x__related_facetable'], true);
-        $this->assertEquals($entity['api']['related']['related_id'], $related_fields['related_id']);
-        $this->assertEquals($entity['api']['related']['related_name'],
-                            $related_fields['related_name']);
-        
-        $this->assertInternalType('array', $fields['example__x__multiple_id']);
-        $this->assertEquals(2, count($fields['example__x__multiple_id']));
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
-                            $fields['example__x__multiple_id'][0]);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_id'],
-                            $fields['example__x__multiple_id'][1]);
-        
-        $this->assertInternalType('array', $fields['example__x__multiple_name']);
-        $this->assertEquals(2, count($fields['example__x__multiple_name']));
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_name'],
-                            $fields['example__x__multiple_name'][0]);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_name'],
-                            $fields['example__x__multiple_name'][1]);
-        
-        $this->assertInternalType('array', $fields['example__x__multiple_facetable']);
+        $this->assertEquals($entity[Entity_Root::VIEW_KEY]['primary_id'], $fields['example' . Target_Cloudsearch::DELIMITER . 'primary_id'][0]);
+        $this->assertInternalType('array', $fields[sprintf('example%sprimary_id', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%sprimary_id', Target_Cloudsearch::DELIMITER)][0], $entity[Entity_Root::VIEW_KEY]['primary_id']);
 
-        $this->assertEquals(2, count($fields['example__x__multiple_facetable']));
-        $this->assertInternalType('string', $fields['example__x__multiple_facetable'][0]);
-        $multiple_fields_0 = Parse::json_parse($fields['example__x__multiple_facetable'][0], true);
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
-                            $multiple_fields_0['multiple_id']);
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_name'],
-                            $multiple_fields_0['multiple_name']);
-        $this->assertInternalType('string', $fields['example__x__multiple_facetable'][1]);
-        $multiple_fields_1 = Parse::json_parse($fields['example__x__multiple_facetable'][1], true);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_id'],
-                            $multiple_fields_1['multiple_id']);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_name'],
-                            $multiple_fields_1['multiple_name']);
-        
-        $mangled = array();
-        foreach($parsed['fields'] as $key => $value)
+
+        $this->assertInternalType('array', $fields[sprintf('example%stest_string_literal', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%stest_string_literal', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_string_literal']);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_string_freetext', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%stest_string_freetext', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_string_freetext']);
+
+        $date = DateTime::createFromFormat('Y-m-d', $entity[Target_Cloudsearch::VIEW_INDEXER]['date']);
+        $this->assertEquals($fields[sprintf('example%sdate', Target_Cloudsearch::DELIMITER)][0], $date->format('Y-m-d'));
+
+        $this->assertEquals($fields[sprintf('example%sinteger', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['integer']);
+        $this->assertInternalType('array', $fields[sprintf('example%suuid', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%suuid', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['uuid']);
+
+        $this->assertInternalType('array', $fields[sprintf('example%stest_colset_test_string_literal', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%stest_colset_test_string_literal', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_string_literal']);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_colset_test_string_freetext', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%stest_colset_test_string_freetext', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_string_freetext']);
+
+        $date = DateTime::createFromFormat('Y-m-d', $entity[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_date']);
+        $this->assertEquals($fields[sprintf('example%stest_colset_test_date', Target_Cloudsearch::DELIMITER)][0], $date->format('Y-m-d'));
+
+        $this->assertEquals($fields[sprintf('example%stest_colset_test_integer', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_integer']);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_colset_test_uuid', Target_Cloudsearch::DELIMITER)]);
+        $this->assertEquals($fields[sprintf('example%stest_colset_test_uuid', Target_Cloudsearch::DELIMITER)][0], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_colset']['test_uuid']);
+
+
+        $this->assertInternalType('array', $fields[sprintf('example%stest_simple_array', Target_Cloudsearch::DELIMITER)]);
+
+        $this->assertCount(5, $fields[sprintf('example%stest_simple_array', Target_Cloudsearch::DELIMITER)]);
+        for ($i = 0; $i < 5; $i++)
         {
-            if(is_array($value))
-            {
-                $mangled[$key] = $value;
-            }
-            else
-            {
-                $mangled[$key] = array($value);
-            }
+            $this->assertEquals($entity[Target_Cloudsearch::VIEW_INDEXER]['test_simple_array'][$i], $fields[sprintf('example%stest_simple_array', Target_Cloudsearch::DELIMITER)][$i]);
+        }
+//        $this->assertEquals($fields[sprintf('example%stest_simple_array', Target_Cloudsearch::DELIMITER)], $entity[Target_Cloudsearch::VIEW_INDEXER]['test_simple_array']);
+        
+        //pivot
+        $this->assertInternalType('array', $fields[sprintf('example%stest_pivot', Target_Cloudsearch::DELIMITER)]);
+        $this->assertCount(3, $fields[sprintf('example%stest_pivot', Target_Cloudsearch::DELIMITER)]);
+        
+        // pivot complex
+        $this->assertInternalType('array', $fields[sprintf('example%stest_pivot_complex', Target_Cloudsearch::DELIMITER)]);
+        $this->assertCount(3, $fields[sprintf('example%stest_pivot_complex', Target_Cloudsearch::DELIMITER)]);
+
+        for ($i = 0; $i < 3; $i++)
+        {
+            $this->assertEquals($entity[Target_Cloudsearch::VIEW_INDEXER]['test_pivot'][$i], $fields[sprintf('example%stest_pivot', Target_Cloudsearch::DELIMITER)][$i]);
+            $this->assertEquals($entity[Target_Cloudsearch::VIEW_INDEXER]['test_pivot_complex'][$i], $fields[sprintf('example%stest_pivot_complex', Target_Cloudsearch::DELIMITER)][$i]);
+
         }
 
-        $entity2 = $target->columnize(Entity_Example::factory(), $mangled);
-        
-        $this->assertEquals($entity['key']['primary_id'], $entity2['key']['primary_id']);
-        $this->assertEquals($entity['timestamp']['modified_at'],
-                            $entity2['timestamp']['modified_at']);
-        $this->assertEquals($entity['api']['name'], $entity2['api']['name']);
-        $this->assertEquals($entity['api']['related']['related_id'],
-                            $entity2['api']['related']['related_id']);
-        $this->assertEquals($entity['api']['related']['related_name'],
-                            $entity2['api']['related']['related_name']);
-        $this->assertEquals(2, count($entity2['api']['multiple']));
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_id'],
-                            $entity2['api']['multiple'][0]['multiple_id']);
-        $this->assertEquals($entity['api']['multiple'][0]['multiple_name'],
-                            $entity2['api']['multiple'][0]['multiple_name']);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_id'],
-                            $entity2['api']['multiple'][1]['multiple_id']);
-        $this->assertEquals($entity['api']['multiple'][1]['multiple_name'],
-                            $entity2['api']['multiple'][1]['multiple_name']);
+        // nested
+        $this->assertArrayNotHasKey(sprintf('example%stest_nested', Target_Cloudsearch::DELIMITER), $fields);
+
+        // all nested fields converted to array
+        $this->assertInternalType('array', $fields[sprintf('example%stest_nested_test_string_literal', Target_Cloudsearch::DELIMITER)]);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_nested_test_string_freetext', Target_Cloudsearch::DELIMITER)]);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_nested_test_integer', Target_Cloudsearch::DELIMITER)]);
+        $this->assertInternalType('array', $fields[sprintf('example%stest_nested_test_uuid', Target_Cloudsearch::DELIMITER)]);
+
+        for ($i = 0; $i < 3; $i++)
+        {
+            $this->assertContains(
+                $entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_literal']
+                , $fields[sprintf('example%stest_nested_test_string_literal', Target_Cloudsearch::DELIMITER)]
+            );
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_string_freetext'], $fields[sprintf('example%stest_nested_test_string_freetext', Target_Cloudsearch::DELIMITER)]);
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_integer'], $fields[sprintf('example%stest_nested_test_integer', Target_Cloudsearch::DELIMITER)]);
+            $this->assertContains($entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_uuid'], $fields[sprintf('example%stest_nested_test_uuid', Target_Cloudsearch::DELIMITER)]);
+            $date = DateTime::createFromFormat('Y-m-d', $entity[Target_Cloudsearch::VIEW_INDEXER]['test_nested'][$i]['test_date']);
+            $this->assertContains($date->format('Y-m-d'), $fields[sprintf('example%stest_nested_test_date', Target_Cloudsearch::DELIMITER)]);
+        }
+
+
     }
 }

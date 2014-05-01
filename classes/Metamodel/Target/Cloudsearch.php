@@ -1160,7 +1160,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $query_parameters['size'] = $page[1];
             }
         }    
-        $query_parameters = $this->select_helper_query_facet($entity, $query_parameters);
+        $query_parameters = $this->select_helper_query_facet($entity, $query, $query_parameters);
         // $query_parameters['facet'] = $query['facet'];
 
         $query_parameters['return-fields'] = implode(',', $this->select_helper_query_return($entity));
@@ -1195,13 +1195,13 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
      * @access protected
      * @return array
      */
-    protected function select_helper_query_facet($entity, $query)
+    protected function select_helper_query_facet($entity, $query, $query_parameters)
     {
         $this->facet_fields = array();
         // $value is not used.  
         foreach ($entity[Target_Cloudsearch::VIEW_INDEXER] as $key => $value)
         {
-            $query = array_merge($query, $this->facetize($entity, $key));
+            $query_parameters = array_merge($query_parameters, $this->facetize($entity, $key));
         }
 
         if (array_key_exists('SPECIAL_FACET', $query))
@@ -1210,12 +1210,12 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
             {
                 $entity[Target_Cloudsearch::VIEW_INDEXER]->set_attribute(Target_Cloudsearch::ATTR_FACET, $key);
                 $special_facets = $this->facetize($entity, $key);
-                $query = array_merge($query, $special_facets);
+                $query_parameters = array_merge($query_parameters, $special_facets);
             }
         }
 
-        $query['facet'] = implode(',', $this->facet_fields);
-        return $query;
+        $query_parameters['facet'] = implode(',', $this->facet_fields);
+        return $query_parameters;
     }
 
     

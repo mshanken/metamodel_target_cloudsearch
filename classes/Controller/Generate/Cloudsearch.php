@@ -242,7 +242,12 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
      */
     public function type_transform(Entity_Structure $parent, $type, $alias, $value, $fields, $field_name)
     {
+        // @TODO this is all crazy 
         // @TODO bools should be in too ?
+        if ($parent->get_attribute(Target_Cloudsearch::ATTR_TEXT_UNIVERSAL, $alias))
+        {
+            $this->copy_to_any[] = $field_name;            
+        }
 
         if ($type instanceof Type_Date || $type instanceof Type_Number)
         {  
@@ -272,11 +277,6 @@ class Controller_Generate_Cloudsearch extends Controller_Generate_Docs
                         , true
                         );
             }
-        }
-
-        if ($parent->get_attribute(Target_Cloudsearch::ATTR_TEXT_UNIVERSAL, $alias))
-        {
-            $this->copy_to_any[] = $field_name;            
         }
 
         if ($parent->get_attribute(Selector::ATTR_TEXT_SEARCH, $alias))

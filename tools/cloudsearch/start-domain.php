@@ -77,6 +77,18 @@ $policy = array(
                 ),
             ),
         ),
+        array(
+            'Effect' => 'Allow',
+            'Action' => 'search',
+            'Resource' => $d_arn,
+            'Condition' => array(
+                'IpAddress' => array(
+                    'aws:SourceIp' => array(
+                        '0.0.0.0/0',
+                    ),
+                ),
+            ),
+        ),
     ),
 );
 

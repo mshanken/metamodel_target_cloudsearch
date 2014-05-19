@@ -831,11 +831,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
         $csdomain = Kohana::$config->load('cloudsearch.domain_name');
 
-        $memcache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
+        $kohanaCache_key = sprintf('cloudsearch_domain_desc_%s', $csdomain);
         
         if (!$this->domain_description)
         {
-            if (!($this->domain_description = $kohanaCache->get($memcache_key)))
+            if (!($this->domain_description = $kohanaCache->get($kohanaCache_key)))
             {
                 $config = array(
                     'key' => Kohana::$config->load('cloudsearch.key'),
@@ -873,7 +873,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 )
                 {
                     $cache_ttl = Kohana::$config->load('cache.kohanaCache.default_expire');
-                    $kohanaCache->set($memcache_key, $this->domain_description, $cache_ttl);
+                    $kohanaCache->set($kohanaCache_key, $this->domain_description, $cache_ttl);
                 }
             }
         }

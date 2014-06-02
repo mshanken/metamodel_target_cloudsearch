@@ -1291,10 +1291,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
 
 
-    static public function sane_str($search_curr)
+    static public function sane_str($search_curr, $omit = array("'" => "\\'",'\\' => '\\\\'))
     {
-       // simple escaping
-       $omit = array("'" => "\\'",'\\' => '\\\\');
        return strtr(Parse::deaccent($search_curr), $omit);
 
         // more aggressive punctuation scrubbing for #766

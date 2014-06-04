@@ -469,6 +469,7 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
         if (array_key_exists($alias,$children) && $children[$alias] instanceof Entity_Array)
         { 
 //            if (!is_scalar($search_value)) error_log(var_dump($search_value, true));
+            /*
             foreach ($search_value as $search_curr)
             {
                 $query['WHERE'][] = sprintf(" %s:'%s'"
@@ -476,6 +477,11 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                     , $this->sane_str($search_curr)
                     );
             }
+            */
+            $query['WHERE'][] = sprintf(" %s:'%s'"
+                , $column_name_renamed
+                , $this->sane_str($search_value)
+                );
         }
         else if (array_key_exists($alias,$children) && $children[$alias] instanceof Type_Number)
         {
@@ -1099,9 +1105,9 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
                 $ret = $view[$alias]->to_array();
                 if (empty($ret))
                 {
-                    return array($default);
+                    return $default;
                 }
-                return $ret;
+                return implode(' ', $ret);
             }
             $ret = $view[$alias];
         }
@@ -1291,10 +1297,8 @@ class Metamodel_Target_Cloudsearch implements Target_Selectable
 
 
 
-    static public function sane_str($search_curr)
+    static public function sane_str($search_curr, $omit = array("'" => "\\'",'\\' => '\\\\'))
     {
-       // simple escaping
-       $omit = array("'" => "\\'",'\\' => '\\\\');
        return strtr(Parse::deaccent($search_curr), $omit);
 
         // more aggressive punctuation scrubbing for #766

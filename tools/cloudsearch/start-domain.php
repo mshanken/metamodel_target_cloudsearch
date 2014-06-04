@@ -77,9 +77,10 @@ $policy = array(
                 ),
             ),
         ),
+        /*
         array(
             'Effect' => 'Allow',
-            'Action' => 'search',
+            'Action' => "search",
             'Resource' => $d_arn,
             'Condition' => array(
                 'IpAddress' => array(
@@ -89,6 +90,7 @@ $policy = array(
                 ),
             ),
         ),
+        */
     ),
 );
 

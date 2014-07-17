@@ -19,8 +19,8 @@ use Aws\Common\Aws;
 use Aws\CloudSearch;
 
 $aws = Aws::factory(array(
-    'key'    => 'AKIAJ2CILZCTOEVDBNQQ',
-    'secret' => 'U1yMPEXmgpCWp3HN6/Jj37jGBtuFI4HQQO8croB1',
+    'key'    => 'YOUR_KEY_HERE',
+    'secret' => 'YOUR_SECRET_HERE',
     'region' => 'us-east-1'
 ));
 $cloudsearch = $aws->get('CloudSearch');
